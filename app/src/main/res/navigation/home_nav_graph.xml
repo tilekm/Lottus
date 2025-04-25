@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/home_nav_graph"
+    app:startDestination="@id/homeFragment">
+
+        <fragment android:id="@+id/homeFragment"
+        android:name="kz.tilek.lottus.fragments.home.HomeFragment"
+        android:label="Главная"
+        tools:layout="@layout/fragment_home">
+        <!-- Добавляем action для перехода к деталям -->
+        <action
+            android:id="@+id/action_homeFragment_to_itemDetailFragment"
+            app:destination="@id/itemDetailFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+        <!-- Action для перехода к созданию аукциона -->
+        <action
+            android:id="@+id/action_homeFragment_to_createAuctionFragment"
+            app:destination="@id/createAuctionFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right"/>
+        </fragment>
+
+        <fragment android:id="@+id/myAuctionsFragment"
+        android:name="kz.tilek.lottus.fragments.home.MyAuctionsFragment"
+        android:label="Мои аукционы"
+        tools:layout="@layout/fragment_my_auctions"/>
+
+        <fragment android:id="@+id/profileFragment"
+        android:name="kz.tilek.lottus.fragments.home.ProfileFragment"
+        android:label="Профиль"
+        tools:layout="@layout/fragment_profile"/>
+
+        <fragment android:id="@+id/settingsFragment"
+        android:name="kz.tilek.lottus.fragments.home.SettingsFragment"
+        android:label="Настройки"
+        tools:layout="@layout/fragment_settings"/>
+
+        <fragment
+        android:id="@+id/createAuctionFragment"
+        android:name="kz.tilek.lottus.fragments.home.CreateAuctionFragment"
+        android:label="Создать аукцион"
+        tools:layout="@layout/fragment_create_auction" />
+
+        <fragment
+        android:id="@+id/itemDetailFragment"
+        android:name="kz.tilek.lottus.fragments.details.ItemDetailFragment"
+            android:label="Детали лота"
+            tools:layout="@layout/fragment_item_detail">
+        <argument
+        android:name="itemId"
+        app:argType="string" />
+        </fragment>
+        <fragment
+            android:id="@+id/notificationsFragment"
+            android:name="kz.tilek.lottus.fragments.notifications.NotificationsFragment"
+            android:label="Уведомления"
+            tools:layout="@layout/fragment_notifications" />
+
+    </navigation>

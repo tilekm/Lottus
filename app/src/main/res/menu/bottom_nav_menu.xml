@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/homeFragment" android:title="Главная" android:icon="@drawable/ic_home"/>
+    <item android:id="@+id/myAuctionsFragment" android:title="Мои аукционы" android:icon="@drawable/ic_auction"/>
+    <item android:id="@+id/notificationsFragment" android:title="Уведомления" android:icon="@drawable/ic_notification"/> <!-- Добавлено -->
+    <item android:id="@+id/profileFragment" android:title="Профиль" android:icon="@drawable/ic_profile"/>
+    <!-- Убрал Настройки для простоты, можно вернуть -->
+    <!-- <item android:id="@+id/settingsFragment" android:title="Настройки" android:icon="@drawable/ic_settings"/> -->
+</menu>
