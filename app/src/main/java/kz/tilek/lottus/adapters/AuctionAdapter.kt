@@ -46,7 +46,7 @@ class AuctionAdapter(
         val item = items[position] // Используем item
         holder.binding.apply {
             tvTitle.text = item.title
-            tvDescription.text = item.description ?: "Нет описания" // Обработка null
+//            tvDescription.text = item.description ?: "Нет описания" // Обработка null
             // Форматируем цену
             tvPrice.text = "Старт: ${item.startPrice} ₸" // Отображаем начальную цену
 

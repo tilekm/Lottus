@@ -250,7 +250,7 @@ class ItemDetailFragment : Fragment() {
 
                         override fun onFinish() {
                             binding.tvTimeRemaining.text = "Аукцион завершен"
-                            binding.tvTimeRemaining.setTextColor(resources.getColor(R.color.gray, null))
+                            binding.tvTimeRemaining.setTextColor(resources.getColor(R.color.md_theme_onSurfaceVariant, null))
                             enableBidInput(false) // Отключаем ввод ставки
                             // Можно добавить авто-обновление данных
                             // viewModel.loadItemDetails(args.itemId)
@@ -258,7 +258,7 @@ class ItemDetailFragment : Fragment() {
                     }.start()
                 } else {
                     binding.tvTimeRemaining.text = "Аукцион завершен"
-                    binding.tvTimeRemaining.setTextColor(resources.getColor(R.color.gray, null))
+                    binding.tvTimeRemaining.setTextColor(resources.getColor(R.color.md_theme_onSurfaceVariant, null))
                     enableBidInput(false)
                 }
             } catch (e: Exception) {
@@ -267,7 +267,7 @@ class ItemDetailFragment : Fragment() {
             }
         } else {
             binding.tvTimeRemaining.text = "Статус: ${item.status.replaceFirstChar { it.titlecase(Locale.getDefault()) }}"
-            binding.tvTimeRemaining.setTextColor(resources.getColor(R.color.gray, null))
+            binding.tvTimeRemaining.setTextColor(resources.getColor(R.color.md_theme_onSurfaceVariant, null))
             enableBidInput(false)
         }
     }

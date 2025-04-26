@@ -30,7 +30,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textSize="12sp"
-        android:textColor="@color/gray"
+        android:textColor="?attr/colorOnSurfaceVariant"
         android:layout_marginStart="8dp"
         tools:text="22.04 15:30"/>
 

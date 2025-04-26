@@ -62,7 +62,7 @@ class NotificationAdapter(
                 root.setBackgroundColor(ContextCompat.getColor(root.context, android.R.color.transparent)) // Обычный фон
             } else {
                 tvNotificationMessage.setTypeface(null, Typeface.BOLD)
-                root.setBackgroundColor(ContextCompat.getColor(root.context, R.color.light_gray_background)) // Слегка выделяем фон
+                root.setBackgroundColor(ContextCompat.getColor(root.context, R.color.md_theme_onSurfaceVariant)) // Слегка выделяем фон
             }
         }
     }

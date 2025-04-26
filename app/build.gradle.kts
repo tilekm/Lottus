@@ -78,4 +78,22 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     // https://mvnrepository.com/artifact/com.github.NaikSoftware/StompProtocolAndroid
     implementation(libs.stompprotocolandroid)
+
+    implementation(libs.androidx.material3)
+    implementation(libs.androidx.material3.window.size.class1)
+    implementation(libs.androidx.material3.adaptive.navigation.suite)
+
+    implementation(libs.glide) // Проверь последнюю версию
+    // ksp("com.github.bumptech.glide:compiler:4.16.0") // Если используешь аннотации Glide
+
+    // Для Activity Result API (выбор изображений)
+    implementation(libs.androidx.activity.ktx) // Проверь последнюю версию
+    implementation(libs.androidx.fragment.ktx) // Проверь последнюю версию
+
+    // ViewPager2 для галереи в деталях
+    implementation(libs.androidx.viewpager2) // Проверь последнюю версию
+
+    // Индикатор для ViewPager2 (точки) - опционально
+     implementation(libs.dotsindicator) // Проверь последнюю версию
+
 }

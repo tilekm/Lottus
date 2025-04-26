@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Lottus</string>
+    <string name="item_image">Item image</string>
 </resources>
