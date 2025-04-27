@@ -7,10 +7,13 @@ import kz.tilek.lottus.models.AuctionItem // Импорт исправленно
 import kz.tilek.lottus.models.Bid // Импорт новой модели
 import kz.tilek.lottus.models.Notification // Импорт новой модели
 import kz.tilek.lottus.models.User // Импорт исправленной модели
+import okhttp3.MultipartBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.Part
 import retrofit2.http.Path
 import java.math.BigDecimal // Импорт BigDecimal
 
@@ -38,7 +41,8 @@ data class CreateAuctionRequest(
     @SerializedName("buyNowPrice") val buyNowPrice: BigDecimal?, // Добавлено, Nullable
     @SerializedName("minBidStep") val minBidStep: BigDecimal, // Добавлено
     @SerializedName("startTime") val startTime: String, // Добавлено (Instant -> String)
-    @SerializedName("endTime") val endTime: String // endTime: Long -> endTime: String
+    @SerializedName("endTime") val endTime: String, // endTime: Long -> endTime: String
+    @SerializedName("imageUrls") val imageUrls: List<String>? // Список URL загруженных
     // imageUrl удален
 )
 
@@ -70,6 +74,10 @@ data class BidMessage(
     @SerializedName("bidAmount") val bidAmount: BigDecimal,
     @SerializedName("createdAt") val createdAt: String, // Instant -> String
     @SerializedName("nextMinimumBid") val nextMinimumBid: BigDecimal
+)
+
+data class FileUploadResponse(
+    @SerializedName("fileUrl") val fileUrl: String
 )
 
 
@@ -128,4 +136,13 @@ interface ApiService {
 
     @POST("api/notifications/{id}/read")
     suspend fun markNotificationAsRead(@Path("id") notificationId: String): Response<Unit> // Ответ без тела (Void/Unit)
+
+    // Media
+    @Multipart // Указываем, что это multipart запрос
+    @POST("api/media/upload")
+    suspend fun uploadImage(
+        @Part file: MultipartBody.Part // Сам файл
+        // Можно добавить @Part("description") description: RequestBody, если нужно передать доп. данные
+    ): Response<FileUploadResponse> // Ожидаем ответ с URL файла
+    // ---------------------------------------
 }

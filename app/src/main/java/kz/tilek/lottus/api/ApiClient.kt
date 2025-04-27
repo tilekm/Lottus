@@ -14,8 +14,8 @@ object ApiClient {
 
     // ЗАМЕНИ НА АДРЕС ТВОЕГО БЭКЕНДА!
     // Если бэкенд на том же компьютере, что и эмулятор:
-    private const val BASE_URL = "http://192.168.0.15:8080/" // Убедись, что порт 8080 верный
-    const val WEBSOCKET_URL = "ws://192.168.0.15:8080/ws/websocket" // Используем ws:// и путь к SockJS эндпоинту + /websocket
+    private const val BASE_URL = "https://881b-37-99-41-92.ngrok-free.app/" // Убедись, что порт 8080 верный
+    const val WEBSOCKET_URL = "wss://881b-37-99-41-92.ngrok-free.app/ws/websocket" // Используем ws:// и путь к SockJS эндпоинту + /websocket
     // Если используешь реальное устройство в той же Wi-Fi сети:
     // private const val BASE_URL = "http://ТВОЙ_IP_АДРЕС_В_ЛОКАЛЬНОЙ_СЕТИ:8080/"
 
@@ -54,19 +54,19 @@ object ApiClient {
 
     // Ленивая инициализация Retrofit
     private val retrofit: Retrofit by lazy {
-        if (android.os.Build.MODEL == "sdk_gphone64_x86_64") {
-            Retrofit.Builder()
-                .baseUrl("http://10.0.2.2:8080")
-                .client(okHttpClient) // Используем один и тот же клиент
-                .addConverterFactory(GsonConverterFactory.create()) // Используем Gson
-                .build()
-        } else {
+//        if (android.os.Build.MODEL == "sdk_gphone64_x86_64") {
+//            Retrofit.Builder()
+//                .baseUrl("http://10.0.2.2:8080")
+//                .client(okHttpClient) // Используем один и тот же клиент
+//                .addConverterFactory(GsonConverterFactory.create()) // Используем Gson
+//                .build()
+//        } else {
             Retrofit.Builder()
                 .baseUrl(BASE_URL)
                 .client(okHttpClient) // Используем один и тот же клиент
                 .addConverterFactory(GsonConverterFactory.create()) // Используем Gson
                 .build()
-        }
+//        }
     }
 
     // Ленивая инициализация ApiService

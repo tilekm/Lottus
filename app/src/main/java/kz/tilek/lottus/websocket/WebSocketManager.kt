@@ -79,15 +79,15 @@ object WebSocketManager {
 
         // --- Добавляем Heartbeat ---
         val currentClient: StompClient
-        if (Build.MODEL == "sdk_gphone64_x86_64") {
-            currentClient = Stomp.over(Stomp.ConnectionProvider.OKHTTP, "ws://10.0.2.2:8080/ws/websocket")
-                .withServerHeartbeat(30000)
-                .withClientHeartbeat(30000)
-        } else {
+//        if (Build.MODEL == "sdk_gphone64_x86_64") {
+//            currentClient = Stomp.over(Stomp.ConnectionProvider.OKHTTP, "ws://10.0.2.2:8080/ws/websocket")
+//                .withServerHeartbeat(30000)
+//                .withClientHeartbeat(30000)
+//        } else {
             currentClient = Stomp.over(Stomp.ConnectionProvider.OKHTTP, ApiClient.WEBSOCKET_URL)
                 .withServerHeartbeat(30000)
                 .withClientHeartbeat(30000)
-        }
+//        }
 
         mStompClient = currentClient
             // Отправляем heartbeat каждые 30 секунд, ожидаем от сервера каждые 30 секунд

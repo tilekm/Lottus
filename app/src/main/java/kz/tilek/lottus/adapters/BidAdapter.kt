@@ -6,6 +6,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import kz.tilek.lottus.databinding.ItemBidBinding // Создадим этот layout
 import kz.tilek.lottus.models.Bid
+import kz.tilek.lottus.util.FormatUtils
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -25,7 +26,7 @@ class BidAdapter(private var bids: List<Bid>) : RecyclerView.Adapter<BidAdapter.
         val bid = bids[position]
         holder.binding.apply {
             tvBidderUsername.text = bid.bidder.username
-            tvBidAmount.text = "${bid.bidAmount} ₸"
+            tvBidAmount.text = "${FormatUtils.formatPrice(bid.bidAmount)}"
 
             // Форматируем время ставки
             try {

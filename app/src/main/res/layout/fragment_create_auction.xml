@@ -7,285 +7,321 @@
     android:background="?attr/colorSurface"
     android:fillViewport="true">
 
-<androidx.constraintlayout.widget.ConstraintLayout
-android:layout_width="match_parent"
-android:layout_height="wrap_content"
-android:padding="16dp"
-tools:context=".fragments.home.CreateAuctionFragment">
-
-<!-- TODO: Добавить Toolbar, если он нужен -->
-<!-- <com.google.android.material.appbar.AppBarLayout ... /> -->
-
-<TextView
-    android:id="@+id/tvCreateTitle"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:text="Создание аукциона"
-    android:textAppearance="?attr/textAppearanceHeadlineSmall"
-android:textColor="?attr/colorOnSurface"
-app:layout_constraintTop_toTopOf="parent"
-app:layout_constraintStart_toStartOf="parent"/>
-
-<!-- Title -->
-<com.google.android.material.textfield.TextInputLayout
-    android:id="@+id/tilAuctionTitle"
-    style="@style/Widget.App.TextInputLayout"
-android:layout_width="0dp"
-android:layout_height="wrap_content"
-android:layout_marginTop="16dp"
-android:hint="Название лота"
-app:layout_constraintTop_toBottomOf="@id/tvCreateTitle"
-app:layout_constraintStart_toStartOf="parent"
-app:layout_constraintEnd_toEndOf="parent">
-<com.google.android.material.textfield.TextInputEditText
-    android:id="@+id/etAuctionTitle"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:inputType="textCapSentences"
-    android:textAppearance="?attr/textAppearanceBodyLarge"/>
-</com.google.android.material.textfield.TextInputLayout>
-
-    <!-- Description -->
-<com.google.android.material.textfield.TextInputLayout
-android:id="@+id/tilAuctionDescription"
-style="@style/Widget.App.TextInputLayout"
-    android:layout_width="0dp"
-    android:layout_height="wrap_content"
-    android:layout_marginTop="8dp"
-    android:hint="Описание (опционально)"
-    app:layout_constraintTop_toBottomOf="@id/tilAuctionTitle"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintEnd_toEndOf="parent">
-<com.google.android.material.textfield.TextInputEditText
-android:id="@+id/etAuctionDescription"
-android:layout_width="match_parent"
-android:layout_height="wrap_content"
-android:inputType="textMultiLine|textCapSentences"
-android:minLines="3"
-android:gravity="top"
-android:textAppearance="?attr/textAppearanceBodyLarge"/>
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <!-- Start Price -->
-<com.google.android.material.textfield.TextInputLayout
-android:id="@+id/tilStartingPrice"
-style="@style/Widget.App.TextInputLayout"
-    android:layout_width="0dp"
-    android:layout_height="wrap_content"
-    android:layout_marginTop="8dp"
-    android:hint="Начальная цена (₸)"
-    app:layout_constraintTop_toBottomOf="@id/tilAuctionDescription"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintEnd_toStartOf="@id/guideline_vertical"
-    app:layout_constraintHorizontal_bias="0"
-    app:layout_constraintWidth_default="spread"
-    android:layout_marginEnd="4dp">
-<com.google.android.material.textfield.TextInputEditText
-android:id="@+id/etStartingPrice"
-android:layout_width="match_parent"
-android:layout_height="wrap_content"
-android:inputType="numberDecimal"
-android:textAppearance="?attr/textAppearanceBodyLarge"/>
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <!-- Min Bid Step -->
-<com.google.android.material.textfield.TextInputLayout
-android:id="@+id/tilMinBidStep"
-style="@style/Widget.App.TextInputLayout"
-    android:layout_width="0dp"
-    android:layout_height="wrap_content"
-    android:layout_marginTop="8dp"
-    android:hint="Мин. шаг (₸)"
-    app:layout_constraintTop_toBottomOf="@id/tilAuctionDescription"
-    app:layout_constraintStart_toEndOf="@id/guideline_vertical"
-    app:layout_constraintEnd_toEndOf="parent"
-    app:layout_constraintHorizontal_bias="1"
-    app:layout_constraintWidth_default="spread"
-    android:layout_marginStart="4dp">
-<com.google.android.material.textfield.TextInputEditText
-android:id="@+id/etMinBidStep"
-android:layout_width="match_parent"
-android:layout_height="wrap_content"
-android:inputType="numberDecimal"
-android:textAppearance="?attr/textAppearanceBodyLarge"/>
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <!-- Buy Now Price -->
-<com.google.android.material.textfield.TextInputLayout
-android:id="@+id/tilBuyNowPrice"
-style="@style/Widget.App.TextInputLayout"
-    android:layout_width="0dp"
-    android:layout_height="wrap_content"
-    android:layout_marginTop="8dp"
-    android:hint="Цена 'Купить сейчас' (₸, опционально)"
-    app:layout_constraintTop_toBottomOf="@id/tilStartingPrice"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintEnd_toEndOf="parent">
-<com.google.android.material.textfield.TextInputEditText
-android:id="@+id/etBuyNowPrice"
-android:layout_width="match_parent"
-android:layout_height="wrap_content"
-android:inputType="numberDecimal"
-android:textAppearance="?attr/textAppearanceBodyLarge"/>
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <!-- Start Time Section -->
-<TextView
-android:id="@+id/tvStartTimeLabel"
-android:layout_width="wrap_content"
-android:layout_height="wrap_content"
-android:text="Время начала"
-android:textAppearance="?attr/textAppearanceTitleSmall"
-    android:textColor="?attr/colorOnSurface"
-    android:layout_marginTop="16dp"
-    app:layout_constraintTop_toBottomOf="@id/tilBuyNowPrice"
-    app:layout_constraintStart_toStartOf="parent"/>
-
-<com.google.android.material.card.MaterialCardView
-android:id="@+id/cvStartTime"
-android:layout_width="0dp"
-android:layout_height="wrap_content"
-android:layout_marginTop="4dp"
-app:cardCornerRadius="8dp"
-app:strokeWidth="1dp"
-app:strokeColor="?attr/colorOutline"
-app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
-app:layout_constraintTop_toBottomOf="@id/tvStartTimeLabel"
-app:layout_constraintStart_toStartOf="parent"
-app:layout_constraintEnd_toEndOf="parent">
-
-<androidx.constraintlayout.widget.ConstraintLayout
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:padding="12dp">
-
-    <TextView
-        android:id="@+id/tvStartTimeValue"
-        android:layout_width="0dp"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textAppearance="?attr/textAppearanceBodyLarge"
-        android:textColor="?attr/colorOnSurfaceVariant"
-        android:hint="Не выбрано"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:padding="16dp"
+        tools:context=".fragments.home.CreateAuctionFragment">
+
+        <!-- ... (существующие поля до cvEndTime) ... -->
+        <TextView
+            android:id="@+id/tvCreateTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Создание аукциона"
+            android:textAppearance="?attr/textAppearanceHeadlineSmall"
+            android:textColor="?attr/colorOnSurface"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"/>
+
+        <!-- Title -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilAuctionTitle"
+            style="@style/Widget.App.TextInputLayout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:hint="Название лота"
+            app:layout_constraintTop_toBottomOf="@id/tvCreateTitle"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etAuctionTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textCapSentences"
+                android:textAppearance="?attr/textAppearanceBodyLarge"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Description -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilAuctionDescription"
+            style="@style/Widget.App.TextInputLayout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:hint="Описание (опционально)"
+            app:layout_constraintTop_toBottomOf="@id/tilAuctionTitle"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etAuctionDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textMultiLine|textCapSentences"
+                android:minLines="3"
+                android:gravity="top"
+                android:textAppearance="?attr/textAppearanceBodyLarge"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Start Price -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilStartingPrice"
+            style="@style/Widget.App.TextInputLayout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:hint="Начальная цена (₸)"
+            app:layout_constraintTop_toBottomOf="@id/tilAuctionDescription"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/guideline_vertical"
+            app:layout_constraintHorizontal_bias="0"
+            app:layout_constraintWidth_default="spread"
+            android:layout_marginEnd="4dp">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etStartingPrice"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal"
+                android:textAppearance="?attr/textAppearanceBodyLarge"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Min Bid Step -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilMinBidStep"
+            style="@style/Widget.App.TextInputLayout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:hint="Мин. шаг (₸)"
+            app:layout_constraintTop_toBottomOf="@id/tilAuctionDescription"
+            app:layout_constraintStart_toEndOf="@id/guideline_vertical"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="1"
+            app:layout_constraintWidth_default="spread"
+            android:layout_marginStart="4dp">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etMinBidStep"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal"
+                android:textAppearance="?attr/textAppearanceBodyLarge"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Buy Now Price -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilBuyNowPrice"
+            style="@style/Widget.App.TextInputLayout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:hint="Цена 'Купить сейчас' (₸, опционально)"
+            app:layout_constraintTop_toBottomOf="@id/tilStartingPrice"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etBuyNowPrice"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal"
+                android:textAppearance="?attr/textAppearanceBodyLarge"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Start Time Section -->
+        <TextView
+            android:id="@+id/tvStartTimeLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Время начала"
+            android:textAppearance="?attr/textAppearanceTitleSmall"
+            android:textColor="?attr/colorOnSurface"
+            android:layout_marginTop="16dp"
+            app:layout_constraintTop_toBottomOf="@id/tilBuyNowPrice"
+            app:layout_constraintStart_toStartOf="parent"/>
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cvStartTime"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            app:cardCornerRadius="8dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="?attr/colorOutline"
+            app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
+            app:layout_constraintTop_toBottomOf="@id/tvStartTimeLabel"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="12dp">
+
+                <TextView
+                    android:id="@+id/tvStartTimeValue"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceBodyLarge"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:hint="Не выбрано"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toStartOf="@id/btnPickStartTime"
+                    android:layout_marginEnd="8dp"
+                    tools:text="22.04.2025 10:00"/>
+
+                <ImageButton
+                    android:id="@+id/btnPickStartTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_calendar"
+                    android:contentDescription="Выбрать время начала"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="4dp"
+                    app:tint="?attr/colorPrimary"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"/>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- End Time Section -->
+        <TextView
+            android:id="@+id/tvEndTimeLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Время окончания"
+            android:textAppearance="?attr/textAppearanceTitleSmall"
+            android:textColor="?attr/colorOnSurface"
+            android:layout_marginTop="16dp"
+            app:layout_constraintTop_toBottomOf="@id/cvStartTime"
+            app:layout_constraintStart_toStartOf="parent"/>
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cvEndTime"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            app:cardCornerRadius="8dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="?attr/colorOutline"
+            app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
+            app:layout_constraintTop_toBottomOf="@id/tvEndTimeLabel"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="12dp">
+
+                <TextView
+                    android:id="@+id/tvEndTimeValue"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceBodyLarge"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:hint="Не выбрано"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toStartOf="@id/btnPickEndTime"
+                    android:layout_marginEnd="8dp"
+                    tools:text="23.04.2025 10:00"/>
+
+                <ImageButton
+                    android:id="@+id/btnPickEndTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_calendar"
+                    android:contentDescription="Выбрать время окончания"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="4dp"
+                    app:tint="?attr/colorPrimary"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"/>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <TextView
+            android:id="@+id/tvImagesLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Изображения"
+            android:textAppearance="?attr/textAppearanceTitleSmall"
+            android:textColor="?attr/colorOnSurface"
+            android:layout_marginTop="16dp"
+            app:layout_constraintTop_toBottomOf="@id/cvEndTime"
+            app:layout_constraintStart_toStartOf="parent"/>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvImagePreviews"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:minHeight="80dp"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            app:layout_constraintTop_toBottomOf="@id/tvImagesLabel"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:listitem="@layout/item_image_preview"
+            tools:itemCount="3"
+            tools:layout_height="80dp"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAddPhoto"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Добавить фото"
+            android:layout_marginTop="8dp"
+            app:icon="@drawable/ic_add_photo"
+            app:layout_constraintTop_toBottomOf="@id/rvImagePreviews"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+        <!-- Submit Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSubmitAuction"
+            style="?attr/materialButtonStyle"
+            android:layout_width="0dp"
+            android:layout_height="56dp"
+            android:text="Создать аукцион"
+            android:textAppearance="?attr/textAppearanceLabelLarge"
+            app:cornerRadius="12dp"
+            android:layout_marginTop="24dp"
+            app:layout_constraintTop_toBottomOf="@id/btnAddPhoto"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/btnPickStartTime"
-        android:layout_marginEnd="8dp"
-        tools:text="22.04.2025 10:00"/>
-
-    <ImageButton
-        android:id="@+id/btnPickStartTime"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:src="@drawable/ic_calendar"
-        android:contentDescription="Выбрать время начала"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:padding="4dp"
-        app:tint="?attr/colorPrimary"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintVertical_bias="0.0"/>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
-</com.google.android.material.card.MaterialCardView>
+        <!-- Progress Bar -->
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="?android:attr/progressBarStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:indeterminateTint="?attr/colorPrimary"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:visibility="visible"/>
 
-    <!-- End Time Section -->
-<TextView
-android:id="@+id/tvEndTimeLabel"
-android:layout_width="wrap_content"
-android:layout_height="wrap_content"
-android:text="Время окончания"
-android:textAppearance="?attr/textAppearanceTitleSmall"
-    android:textColor="?attr/colorOnSurface"
-    android:layout_marginTop="16dp"
-    app:layout_constraintTop_toBottomOf="@id/cvStartTime"
-    app:layout_constraintStart_toStartOf="parent"/>
-
-<com.google.android.material.card.MaterialCardView
-android:id="@+id/cvEndTime"
-android:layout_width="0dp"
-android:layout_height="wrap_content"
-android:layout_marginTop="4dp"
-app:cardCornerRadius="8dp"
-app:strokeWidth="1dp"
-app:strokeColor="?attr/colorOutline"
-app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
-app:layout_constraintTop_toBottomOf="@id/tvEndTimeLabel"
-app:layout_constraintStart_toStartOf="parent"
-app:layout_constraintEnd_toEndOf="parent">
-
-<androidx.constraintlayout.widget.ConstraintLayout
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:padding="12dp">
-
-    <TextView
-        android:id="@+id/tvEndTimeValue"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:textAppearance="?attr/textAppearanceBodyLarge"
-        android:textColor="?attr/colorOnSurfaceVariant"
-        android:hint="Не выбрано"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/btnPickEndTime"
-        android:layout_marginEnd="8dp"
-        tools:text="23.04.2025 10:00"/>
-
-    <ImageButton
-        android:id="@+id/btnPickEndTime"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:src="@drawable/ic_calendar"
-        android:contentDescription="Выбрать время окончания"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:padding="4dp"
-        app:tint="?attr/colorPrimary"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
-
-</androidx.constraintlayout.widget.ConstraintLayout>
-</com.google.android.material.card.MaterialCardView>
-
-    <!-- Submit Button -->
-<com.google.android.material.button.MaterialButton
-android:id="@+id/btnSubmitAuction"
-style="?attr/materialButtonStyle"
-    android:layout_width="0dp"
-    android:layout_height="56dp"
-    android:text="Создать аукцион"
-    android:textAppearance="?attr/textAppearanceLabelLarge"
-    app:cornerRadius="12dp"
-    android:layout_marginTop="24dp"
-    app:layout_constraintTop_toBottomOf="@id/cvEndTime"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintEnd_toEndOf="parent"
-    app:layout_constraintBottom_toBottomOf="parent"
-    app:layout_constraintVertical_bias="0.0"/>
-
-    <!-- Progress Bar -->
-<ProgressBar
-android:id="@+id/progressBar"
-style="?android:attr/progressBarStyle"
-android:layout_width="wrap_content"
-android:layout_height="wrap_content"
-android:visibility="gone"
-android:indeterminateTint="?attr/colorPrimary"
-    app:layout_constraintTop_toTopOf="parent"
-    app:layout_constraintBottom_toBottomOf="parent"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintEnd_toEndOf="parent"
-    tools:visibility="visible"/>
-
-    <!-- Guideline for splitting price fields -->
-<androidx.constraintlayout.widget.Guideline
-android:id="@+id/guideline_vertical"
-android:layout_width="wrap_content"
-android:layout_height="wrap_content"
-android:orientation="vertical"
-app:layout_constraintGuide_percent="0.5"/>
+        <!-- Guideline for splitting price fields -->
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guideline_vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent="0.5"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-    </ScrollView>
+</ScrollView>

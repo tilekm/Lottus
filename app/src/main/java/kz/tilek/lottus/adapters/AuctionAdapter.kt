@@ -3,29 +3,27 @@ package kz.tilek.lottus.adapters
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
-// import android.widget.PopupMenu // Пока убираем PopupMenu
 import androidx.recyclerview.widget.RecyclerView
-// import kz.tilek.lottus.R // Пока не нужен R.menu
+import com.bumptech.glide.Glide // <-- Импорт Glide
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions // <-- Для плавного появления
+import kz.tilek.lottus.R // <-- Для доступа к drawable
 import kz.tilek.lottus.databinding.ItemAuctionBinding
-import kz.tilek.lottus.models.AuctionItem // Используем новую модель
+import kz.tilek.lottus.models.AuctionItem
+import kz.tilek.lottus.util.FormatUtils
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
 
-// Изменяем тип списка на List<AuctionItem>
 class AuctionAdapter(
-    private var items: List<AuctionItem>, // Используем items вместо auctions, делаем var для обновления
-    private val onItemClick: (AuctionItem) -> Unit // Добавляем обработчик клика
-    // Убираем onItemAction для редактирования/удаления
-    // private val onItemAction: (position: Int, action: String) -> Unit
+    private var items: List<AuctionItem>,
+    private val onItemClick: (AuctionItem) -> Unit
 ) : RecyclerView.Adapter<AuctionAdapter.AuctionViewHolder>() {
 
     inner class AuctionViewHolder(val binding: ItemAuctionBinding) :
         RecyclerView.ViewHolder(binding.root) {
         init {
-            // Добавляем обработчик клика на весь элемент
             binding.root.setOnClickListener {
                 val position = adapterPosition
                 if (position != RecyclerView.NO_POSITION) {
@@ -43,43 +41,51 @@ class AuctionAdapter(
     }
 
     override fun onBindViewHolder(holder: AuctionViewHolder, position: Int) {
-        val item = items[position] // Используем item
+        val item = items[position]
         holder.binding.apply {
             tvTitle.text = item.title
-//            tvDescription.text = item.description ?: "Нет описания" // Обработка null
-            // Форматируем цену
-            tvPrice.text = "Старт: ${item.startPrice} ₸" // Отображаем начальную цену
+            tvPrice.text = "Старт: ${FormatUtils.formatPrice(item.startPrice)}"
+
+            // --- ЗАГРУЗКА ИЗОБРАЖЕНИЯ ---
+            val firstImageUrl = item.imageUrls?.firstOrNull() // Берем первый URL, если есть
+
+            Glide.with(holder.itemView.context)
+                .load(firstImageUrl) // Загружаем URL (может быть null)
+                .placeholder(R.drawable.ic_image_placeholder) // Плейсхолдер во время загрузки
+                .error(R.drawable.ic_broken_image) // Картинка при ошибке или если URL null
+                .transition(DrawableTransitionOptions.withCrossFade()) // Плавное появление
+                .into(ivAuctionImage) // В наш ImageView
+            // ---------------------------
 
             // Отображаем статус
             tvStatus.text = when (item.status.lowercase()) {
                 "active" -> "Активен"
                 "completed" -> "Завершен"
                 "cancelled" -> "Отменен"
-                else -> item.status // Показываем как есть, если статус неизвестен
+                "scheduled" -> "Запланирован" // Добавим запланированный
+                else -> item.status
             }
+            // TODO: Установить соответствующий фон для статуса (status_background_active, _completed, _scheduled и т.д.)
+            // val statusBackgroundRes = when (item.status.lowercase()) { ... }
+            // tvStatus.setBackgroundResource(statusBackgroundRes)
 
             // Форматируем и отображаем время окончания
             try {
-                val endTimeInstant = Instant.parse(item.endTime) // Парсим строку ISO 8601
+                val endTimeInstant = Instant.parse(item.endTime)
                 val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
-                    .withLocale(Locale("ru", "RU")) // Используем русскую локаль
-                    .withZone(ZoneId.systemDefault()) // Используем системную временную зону
+                    .withLocale(Locale("ru", "RU"))
+                    .withZone(ZoneId.systemDefault())
                 tvEndTime.text = "До: ${formatter.format(endTimeInstant)}"
             } catch (e: Exception) {
-                tvEndTime.text = "Неверное время" // Обработка ошибки парсинга
-                // Логирование ошибки e.printStackTrace()
+                tvEndTime.text = "Неверное время"
             }
-
-            // Убираем обработчик долгого нажатия
-            // holder.itemView.setOnLongClickListener { view -> ... }
         }
     }
 
     override fun getItemCount(): Int = items.size
 
-    // Метод для обновления данных в адаптере
     fun updateData(newItems: List<AuctionItem>) {
         items = newItems
-        notifyDataSetChanged() // Простое обновление, для оптимизации можно использовать DiffUtil
+        notifyDataSetChanged()
     }
 }

@@ -2,16 +2,14 @@
 package kz.tilek.lottus.repositories
 
 import kz.tilek.lottus.api.ApiClient
-import kz.tilek.lottus.api.CreateAuctionRequest
+import kz.tilek.lottus.api.CreateAuctionRequest // <-- Убедись, что импорт правильный
 import kz.tilek.lottus.models.AuctionItem
 import kz.tilek.lottus.util.parseError
 
 class ItemRepository {
     private val apiService = ApiClient.instance
 
-    /**
-     * Получает список всех активных аукционов.
-     */
+    // getActiveItems, getAllItems, getItemDetails, getItemsBySeller - без изменений
     suspend fun getActiveItems(): Result<List<AuctionItem>> {
         return try {
             val response = apiService.getActiveItems()
@@ -25,9 +23,6 @@ class ItemRepository {
         }
     }
 
-    /**
-     * Получает список всех аукционов.
-     */
     suspend fun getAllItems(): Result<List<AuctionItem>> {
         return try {
             val response = apiService.getAllItems()
@@ -41,9 +36,6 @@ class ItemRepository {
         }
     }
 
-    /**
-     * Получает детали одного лота по ID.
-     */
     suspend fun getItemDetails(itemId: String): Result<AuctionItem> {
         return try {
             val response = apiService.getItemDetails(itemId)
@@ -58,26 +50,6 @@ class ItemRepository {
         }
     }
 
-    /**
-     * Создает новый аукцион.
-     */
-    suspend fun createItem(request: CreateAuctionRequest): Result<AuctionItem> {
-        return try {
-            val response = apiService.createItem(request)
-            if (response.isSuccessful) {
-                response.body()?.let { Result.success(it) }
-                    ?: Result.failure(Exception("Не получен созданный лот от сервера."))
-            } else {
-                Result.failure(Exception("Ошибка создания лота: ${parseError(response)}"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    /**
-     * Получает список лотов по ID продавца.
-     */
     suspend fun getItemsBySeller(sellerId: String): Result<List<AuctionItem>> {
         return try {
             val response = apiService.getItemsBySeller(sellerId)
@@ -85,6 +57,26 @@ class ItemRepository {
                 Result.success(response.body() ?: emptyList())
             } else {
                 Result.failure(Exception("Ошибка получения лотов продавца: ${parseError(response)}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+
+    /**
+     * Создает новый аукцион.
+     * Принимает готовый CreateAuctionRequest.
+     */
+    suspend fun createItem(request: CreateAuctionRequest): Result<AuctionItem> { // <-- Принимаем request
+        return try {
+            // Просто передаем request в ApiService
+            val response = apiService.createItem(request)
+            if (response.isSuccessful) {
+                response.body()?.let { Result.success(it) }
+                    ?: Result.failure(Exception("Не получен созданный лот от сервера."))
+            } else {
+                Result.failure(Exception("Ошибка создания лота: ${parseError(response)}"))
             }
         } catch (e: Exception) {
             Result.failure(e)
