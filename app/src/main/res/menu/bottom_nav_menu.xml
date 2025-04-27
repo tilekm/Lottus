@@ -3,7 +3,7 @@
     <item android:id="@+id/homeFragment" android:title="Главная" android:icon="@drawable/ic_home"/>
     <item android:id="@+id/myAuctionsFragment" android:title="Мои аукционы" android:icon="@drawable/ic_auction"/>
     <item android:id="@+id/notificationsFragment" android:title="Уведомления" android:icon="@drawable/ic_notification"/> <!-- Добавлено -->
-    <item android:id="@+id/profileFragment" android:title="Профиль" android:icon="@drawable/ic_profile"/>
+    <item android:id="@+id/profileFragment" android:title="Профиль" android:icon="@drawable/ic_person"/>
     <!-- Убрал Настройки для простоты, можно вернуть -->
     <!-- <item android:id="@+id/settingsFragment" android:title="Настройки" android:icon="@drawable/ic_settings"/> -->
 </menu>
