@@ -10,88 +10,86 @@
     tools:context=".fragments.home.ProfileFragment">
 
     <!-- Аватар (используем ShapeableImageView для круглого аватара) -->
-<com.google.android.material.imageview.ShapeableImageView
-android:id="@+id/ivProfileAvatar"
-android:layout_width="120dp"
-android:layout_height="120dp"
-android:layout_marginTop="48dp"
-android:scaleType="centerCrop"
-android:padding="4dp"
-    app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
-    app:strokeWidth="1dp"
-    app:strokeColor="?attr/colorOutline"
-    app:layout_constraintTop_toTopOf="parent"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintEnd_toEndOf="parent"
-    android:contentDescription="Аватар пользователя"
-    tools:src="@tools:sample/avatars" /> <!-- Замени на реальный плейсхолдер или загрузку -->
-
-    <!-- Имя пользователя -->
-<TextView
-android:id="@+id/tvUsername"
-android:layout_width="wrap_content"
-android:layout_height="wrap_content"
-android:layout_marginTop="24dp"
-android:textAppearance="?attr/textAppearanceHeadlineSmall"
-    android:textColor="?attr/colorOnSurface"
-    app:layout_constraintTop_toBottomOf="@id/ivProfileAvatar"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintEnd_toEndOf="parent"
-    tools:text="Username" />
-
-    <!-- Email пользователя -->
-<TextView
-android:id="@+id/tvUserEmail"
-android:layout_width="wrap_content"
-android:layout_height="wrap_content"
-android:layout_marginTop="4dp"
-android:textAppearance="?attr/textAppearanceBodyLarge"
-    android:textColor="?attr/colorOnSurfaceVariant"
-    app:layout_constraintTop_toBottomOf="@id/tvUsername"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintEnd_toEndOf="parent"
-    tools:text="user@example.com" />
-
-    <!-- Можно добавить рейтинг или другие поля, используя ?attr/textAppearanceBodyMedium и ?attr/colorOnSurfaceVariant -->
-    <!--
-    <TextView
-        android:id="@+id/tvUserRating"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:textAppearance="?attr/textAppearanceBodyMedium"
-        android:textColor="?attr/colorOnSurfaceVariant"
-        app:layout_constraintTop_toBottomOf="@id/tvUserEmail"
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivProfileAvatar"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_marginTop="48dp"
+        android:scaleType="centerCrop"
+        android:padding="4dp"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
+        app:strokeWidth="1dp"
+        app:strokeColor="?attr/colorOutline"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        tools:text="Рейтинг: 4.5"/>
-    -->
+        android:contentDescription="Аватар пользователя"
+        tools:src="@tools:sample/avatars" /> <!-- Замени на реальный плейсхолдер или загрузку -->
+
+    <!-- Имя пользователя -->
+    <TextView
+        android:id="@+id/tvUsername"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:textAppearance="?attr/textAppearanceHeadlineSmall"
+        android:textColor="?attr/colorOnSurface"
+        app:layout_constraintTop_toBottomOf="@id/ivProfileAvatar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:text="Username" />
+
+    <!-- Email пользователя -->
+    <TextView
+        android:id="@+id/tvUserEmail"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textAppearance="?attr/textAppearanceBodyLarge"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintTop_toBottomOf="@id/tvUsername"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:text="user@example.com" />
+
+    <!-- НОВАЯ КНОПКА -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnEditProfile"
+        style="?attr/materialButtonOutlinedStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Редактировать профиль"
+        app:icon="@drawable/ic_edit"
+        app:layout_constraintTop_toBottomOf="@id/tvUserEmail"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
 
     <!-- Кнопка выхода -->
-<com.google.android.material.button.MaterialButton
-android:id="@+id/btnLogout"
-style="?attr/materialButtonOutlinedStyle"
-    android:layout_width="0dp"
-    android:layout_height="wrap_content"
-    android:text="Выйти из аккаунта"
-    android:layout_marginBottom="16dp"
-    android:textAppearance="?attr/textAppearanceLabelLarge"
-    app:layout_constraintBottom_toBottomOf="parent"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintEnd_toEndOf="parent" />
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnLogout"
+        style="?attr/materialButtonOutlinedStyle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Выйти из аккаунта"
+        android:layout_marginBottom="16dp"
+        android:textAppearance="?attr/textAppearanceLabelLarge"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- ProgressBar -->
-<ProgressBar
-android:id="@+id/progressBar"
-style="?android:attr/progressBarStyle"
-android:layout_width="wrap_content"
-android:layout_height="wrap_content"
-android:visibility="gone"
-android:indeterminateTint="?attr/colorPrimary"
-    app:layout_constraintTop_toTopOf="parent"
-    app:layout_constraintBottom_toBottomOf="parent"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintEnd_toEndOf="parent"
-    tools:visibility="visible"/>
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:indeterminateTint="?attr/colorPrimary"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:visibility="visible"/>
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

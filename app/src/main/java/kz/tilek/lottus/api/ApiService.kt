@@ -6,6 +6,7 @@ import com.google.gson.annotations.SerializedName
 import kz.tilek.lottus.models.AuctionItem // Импорт исправленной модели
 import kz.tilek.lottus.models.Bid // Импорт новой модели
 import kz.tilek.lottus.models.Notification // Импорт новой модели
+import kz.tilek.lottus.models.Review
 import kz.tilek.lottus.models.User // Импорт исправленной модели
 import okhttp3.MultipartBody
 import retrofit2.Response
@@ -13,11 +14,17 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Part
 import retrofit2.http.Path
 import java.math.BigDecimal // Импорт BigDecimal
 
 // --- Requests ---
+data class UserProfileUpdateRequest(
+    @SerializedName("username") val username: String?, // Nullable, если не меняем
+    @SerializedName("email") val email: String?       // Nullable, если не меняем
+    // Добавь другие поля, если они будут редактироваться (например, bio)
+)
 
 // Соответствует AuthenticationRequest.java
 data class LoginRequest(
@@ -51,6 +58,12 @@ data class PlaceBidRequest( // Переименовано для ясности
     @SerializedName("bidderId") val bidderId: String, // Добавлено (UUID -> String)
     @SerializedName("itemId") val itemId: String, // Добавлено (UUID -> String)
     @SerializedName("bidAmount") val bidAmount: BigDecimal // amount: Double -> bidAmount: BigDecimal
+)
+
+data class ReviewCreateRequest(
+    @SerializedName("reviewedUserId") val reviewedUserId: String, // UUID -> String
+    @SerializedName("rating") val rating: BigDecimal,
+    @SerializedName("comment") val comment: String? // Nullable
 )
 
 // --- Responses ---
@@ -93,14 +106,27 @@ interface ApiService {
 
     // Users
     @GET("api/users/{id}")
-    suspend fun getUserProfile(@Path("id") userId: String): Response<User>
+    suspend fun getUserProfile(@Path("id") userId: String): Response<User> // Пока оставляем User, но помним, что это публичные данные
+
+    // НОВЫЙ МЕТОД для получения данных ТЕКУЩЕГО пользователя
+    @GET("api/users/me")
+    suspend fun getCurrentUserProfile(): Response<User> // Ожидаем полный профиль (User модель должна соответствовать)
 
     @GET("api/users/by-username/{username}")
-    suspend fun getUserByUsername(@Path("username") username: String): Response<User>
+    suspend fun getUserByUsername(@Path("username") username: String): Response<User> // Тоже публичный профиль
+
+    @PUT("api/users/me")
+    suspend fun updateCurrentUserProfile(
+        @Body updateRequest: UserProfileUpdateRequest
+    ): Response<User> // Ожидаем обновленный полный профиль
+
 
     // Items (Auctions)
     @GET("api/items")
     suspend fun getAllItems(): Response<List<AuctionItem>>
+
+    @POST("api/items/{itemId}/buy-now")
+    suspend fun buyNowForItem(@Path("itemId") itemId: String): Response<Bid> // Ожидаем Bid в ответе
 
     @GET("api/items/active")
     suspend fun getActiveItems(): Response<List<AuctionItem>>
@@ -144,5 +170,14 @@ interface ApiService {
         @Part file: MultipartBody.Part // Сам файл
         // Можно добавить @Part("description") description: RequestBody, если нужно передать доп. данные
     ): Response<FileUploadResponse> // Ожидаем ответ с URL файла
-    // ---------------------------------------
+
+    // --- Reviews ---
+    // НОВЫЙ МЕТОД для получения отзывов О пользователе
+    @GET("api/users/{userId}/reviews")
+    suspend fun getReviewsForUser(@Path("userId") userId: String): Response<List<Review>>
+
+    // НОВЫЙ МЕТОД для создания отзыва (понадобится на следующем шаге)
+    @POST("api/reviews")
+    suspend fun createReview(@Body reviewRequest: ReviewCreateRequest): Response<Review>
+
 }

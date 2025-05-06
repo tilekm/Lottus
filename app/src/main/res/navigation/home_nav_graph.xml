@@ -6,61 +6,93 @@
     app:startDestination="@id/homeFragment">
 
         <fragment android:id="@+id/homeFragment"
-        android:name="kz.tilek.lottus.fragments.home.HomeFragment"
-        android:label="Главная"
-        tools:layout="@layout/fragment_home">
-        <!-- Добавляем action для перехода к деталям -->
-        <action
-            android:id="@+id/action_homeFragment_to_itemDetailFragment"
-            app:destination="@id/itemDetailFragment"
-            app:enterAnim="@anim/slide_in_right"
-            app:exitAnim="@anim/slide_out_left"
-            app:popEnterAnim="@anim/slide_in_left"
-            app:popExitAnim="@anim/slide_out_right" />
-        <!-- Action для перехода к созданию аукциона -->
-        <action
-            android:id="@+id/action_homeFragment_to_createAuctionFragment"
-            app:destination="@id/createAuctionFragment"
-            app:enterAnim="@anim/slide_in_right"
-            app:exitAnim="@anim/slide_out_left"
-            app:popEnterAnim="@anim/slide_in_left"
-            app:popExitAnim="@anim/slide_out_right"/>
+            android:name="kz.tilek.lottus.fragments.home.HomeFragment"
+            android:label="Главная"
+            tools:layout="@layout/fragment_home">
+                <action
+                    android:id="@+id/action_homeFragment_to_itemDetailFragment"
+                    app:destination="@id/itemDetailFragment"
+                    app:enterAnim="@anim/slide_in_right"
+                    app:exitAnim="@anim/slide_out_left"
+                    app:popEnterAnim="@anim/slide_in_left"
+                    app:popExitAnim="@anim/slide_out_right" />
+                <action
+                    android:id="@+id/action_homeFragment_to_createAuctionFragment"
+                    app:destination="@id/createAuctionFragment"
+                    app:enterAnim="@anim/slide_in_right"
+                    app:exitAnim="@anim/slide_out_left"
+                    app:popEnterAnim="@anim/slide_in_left"
+                    app:popExitAnim="@anim/slide_out_right"/>
         </fragment>
 
         <fragment android:id="@+id/myAuctionsFragment"
-        android:name="kz.tilek.lottus.fragments.home.MyAuctionsFragment"
-        android:label="Мои аукционы"
-        tools:layout="@layout/fragment_my_auctions"/>
+            android:name="kz.tilek.lottus.fragments.home.MyAuctionsFragment"
+            android:label="Мои аукционы"
+            tools:layout="@layout/fragment_my_auctions"/>
 
         <fragment android:id="@+id/profileFragment"
-        android:name="kz.tilek.lottus.fragments.home.ProfileFragment"
-        android:label="Профиль"
-        tools:layout="@layout/fragment_profile"/>
+            android:name="kz.tilek.lottus.fragments.home.ProfileFragment"
+            android:label="Профиль"
+            tools:layout="@layout/fragment_profile">
+                <!-- НОВОЕ ДЕЙСТВИЕ -->
+                <action
+                    android:id="@+id/action_profileFragment_to_userSettingsFragment"
+                    app:destination="@id/userSettingsFragment"
+                    app:enterAnim="@anim/slide_in_right"
+                    app:exitAnim="@anim/slide_out_left"
+                    app:popEnterAnim="@anim/slide_in_left"
+                    app:popExitAnim="@anim/slide_out_right" />
+        </fragment>
 
-        <fragment android:id="@+id/settingsFragment"
-        android:name="kz.tilek.lottus.fragments.home.SettingsFragment"
-        android:label="Настройки"
-        tools:layout="@layout/fragment_settings"/>
+        <!-- Убрал SettingsFragment, так как он был пустой -->
+        <!-- <fragment android:id="@+id/settingsFragment" ... /> -->
 
         <fragment
-        android:id="@+id/createAuctionFragment"
-        android:name="kz.tilek.lottus.fragments.home.CreateAuctionFragment"
-        android:label="Создать аукцион"
-        tools:layout="@layout/fragment_create_auction" />
+            android:id="@+id/createAuctionFragment"
+            android:name="kz.tilek.lottus.fragments.home.CreateAuctionFragment"
+            android:label="Создать аукцион"
+            tools:layout="@layout/fragment_create_auction" />
 
         <fragment
-        android:id="@+id/itemDetailFragment"
-        android:name="kz.tilek.lottus.fragments.details.ItemDetailFragment"
+            android:id="@+id/itemDetailFragment"
+            android:name="kz.tilek.lottus.fragments.details.ItemDetailFragment"
             android:label="Детали лота"
             tools:layout="@layout/fragment_item_detail">
-        <argument
-        android:name="itemId"
-        app:argType="string" />
+                <argument
+                    android:name="itemId"
+                    app:argType="string" />
+                <!-- НОВОЕ ДЕЙСТВИЕ для перехода к профилю пользователя -->
+                <action
+                    android:id="@+id/action_itemDetailFragment_to_userProfileFragment"
+                    app:destination="@id/userProfileFragment"
+                    app:enterAnim="@anim/slide_in_right"
+                    app:exitAnim="@anim/slide_out_left"
+                    app:popEnterAnim="@anim/slide_in_left"
+                    app:popExitAnim="@anim/slide_out_right" />
         </fragment>
+
         <fragment
             android:id="@+id/notificationsFragment"
             android:name="kz.tilek.lottus.fragments.notifications.NotificationsFragment"
             android:label="Уведомления"
             tools:layout="@layout/fragment_notifications" />
 
-    </navigation>
+        <!-- НОВЫЙ ФРАГМЕНТ -->
+        <fragment
+            android:id="@+id/userSettingsFragment"
+            android:name="kz.tilek.lottus.fragments.home.UserSettingsFragment"
+            android:label="Настройки профиля"
+            tools:layout="@layout/fragment_user_settings" />
+
+        <fragment
+            android:id="@+id/userProfileFragment"
+            android:name="kz.tilek.lottus.fragments.profile.UserProfileFragment"
+            android:label="Профиль пользователя"
+            tools:layout="@layout/fragment_user_profile">
+                <!-- Аргумент для передачи ID пользователя -->
+                <argument
+                    android:name="userId"
+                    app:argType="string" />
+        </fragment>
+
+</navigation>

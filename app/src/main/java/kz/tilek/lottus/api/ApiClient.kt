@@ -14,8 +14,8 @@ object ApiClient {
 
     // ЗАМЕНИ НА АДРЕС ТВОЕГО БЭКЕНДА!
     // Если бэкенд на том же компьютере, что и эмулятор:
-    private const val BASE_URL = "https://881b-37-99-41-92.ngrok-free.app/" // Убедись, что порт 8080 верный
-    const val WEBSOCKET_URL = "wss://881b-37-99-41-92.ngrok-free.app/ws/websocket" // Используем ws:// и путь к SockJS эндпоинту + /websocket
+    private const val BASE_URL = "http://10.0.2.2:8080/" // Убедись, что порт 8080 верный
+    const val WEBSOCKET_URL = "ws://10.0.2.2:8080/ws/websocket" // Используем ws:// и путь к SockJS эндпоинту + /websocket
     // Если используешь реальное устройство в той же Wi-Fi сети:
     // private const val BASE_URL = "http://ТВОЙ_IP_АДРЕС_В_ЛОКАЛЬНОЙ_СЕТИ:8080/"
 

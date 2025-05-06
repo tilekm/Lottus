@@ -6,8 +6,9 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
+// import kotlinx.coroutines.awaitAll // Не используется напрямую здесь, но полезно знать
 import kotlinx.coroutines.launch
+import kz.tilek.lottus.api.PlaceBidRequest // Используем полное имя для ясности
 import kz.tilek.lottus.models.AuctionItem
 import kz.tilek.lottus.models.Bid
 import kz.tilek.lottus.repositories.BidRepository
@@ -16,7 +17,7 @@ import kz.tilek.lottus.repositories.ItemRepository
 data class ItemDetailData(
     val item: AuctionItem,
     val bids: List<Bid>,
-    val highestBid: Bid? // Добавим отдельно для удобства
+    val highestBid: Bid?
 )
 
 class ItemDetailViewModel : ViewModel() {
@@ -24,56 +25,54 @@ class ItemDetailViewModel : ViewModel() {
     private val itemRepository = ItemRepository()
     private val bidRepository = BidRepository()
 
-    // LiveData для хранения объединенных данных (лот + ставки)
     private val _itemDetailState = MutableLiveData<Result<ItemDetailData>>()
     val itemDetailState: LiveData<Result<ItemDetailData>> = _itemDetailState
 
-    // LiveData для состояния размещения ставки
     private val _placeBidState = MutableLiveData<Result<Bid>>()
     val placeBidState: LiveData<Result<Bid>> = _placeBidState
 
-    // LiveData для индикатора общей загрузки
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
 
-    // LiveData для индикатора загрузки при размещении ставки
     private val _isPlacingBid = MutableLiveData<Boolean>()
     val isPlacingBid: LiveData<Boolean> = _isPlacingBid
 
-    /**
-     * Загружает детали лота и историю ставок одновременно.
-     */
+    // --- Новые LiveData для "Купить сейчас" ---
+    private val _buyNowState = MutableLiveData<Result<Bid>>()
+    val buyNowState: LiveData<Result<Bid>> = _buyNowState
+
+    private val _isBuyingNow = MutableLiveData<Boolean>()
+    val isBuyingNow: LiveData<Boolean> = _isBuyingNow
+    // -----------------------------------------
+
     fun loadItemDetails(itemId: String) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                // Запускаем запросы параллельно
                 val itemDeferred = async { itemRepository.getItemDetails(itemId) }
                 val bidsDeferred = async { bidRepository.getBidsForItem(itemId) }
-                val highestBidDeferred = async { bidRepository.getHighestBidForItem(itemId) }
+                // val highestBidDeferred = async { bidRepository.getHighestBidForItem(itemId) } // Можно получить из списка bids
 
-                // Ожидаем результаты
                 val itemResult = itemDeferred.await()
                 val bidsResult = bidsDeferred.await()
-                val highestBidResult = highestBidDeferred.await()
+                // val highestBidResult = highestBidDeferred.await()
 
-                // Проверяем, что все запросы успешны
-                if (itemResult.isSuccess && bidsResult.isSuccess && highestBidResult.isSuccess) {
+                if (itemResult.isSuccess && bidsResult.isSuccess) {
+                    val bidsList = bidsResult.getOrThrow()
+                    val highestBid = bidsList.firstOrNull() // Получаем из отсортированного списка ставок
+
                     val itemData = ItemDetailData(
                         item = itemResult.getOrThrow(),
-                        bids = bidsResult.getOrThrow(),
-                        highestBid = highestBidResult.getOrThrow() // Может быть null
+                        bids = bidsList,
+                        highestBid = highestBid
                     )
                     _itemDetailState.value = Result.success(itemData)
                 } else {
-                    // Если хотя бы один запрос не удался, возвращаем первую ошибку
                     val error = itemResult.exceptionOrNull()
                         ?: bidsResult.exceptionOrNull()
-                        ?: highestBidResult.exceptionOrNull()
                         ?: Exception("Неизвестная ошибка загрузки деталей лота")
                     _itemDetailState.value = Result.failure(error)
                 }
-
             } catch (e: Exception) {
                 _itemDetailState.value = Result.failure(e)
             } finally {
@@ -82,20 +81,32 @@ class ItemDetailViewModel : ViewModel() {
         }
     }
 
-    /**
-     * Размещает ставку.
-     */
-    fun placeBid(request: kz.tilek.lottus.api.PlaceBidRequest) { // Используем полное имя, чтобы избежать конфликта
+    fun placeBid(request: PlaceBidRequest) {
         viewModelScope.launch {
             _isPlacingBid.value = true
             val result = bidRepository.placeBid(request)
-            _placeBidState.value = result // Уведомляем UI о результате ставки
-
-            // Если ставка успешна, перезагружаем данные, чтобы обновить список ставок
+            _placeBidState.value = result
             if (result.isSuccess) {
                 loadItemDetails(request.itemId)
             }
             _isPlacingBid.value = false
+        }
+    }
+
+    /**
+     * Выполняет операцию "Купить сейчас".
+     */
+    fun executeBuyNow(itemId: String) {
+        viewModelScope.launch {
+            _isBuyingNow.value = true
+            val result = itemRepository.buyNowForItem(itemId)
+            _buyNowState.value = result
+
+            if (result.isSuccess) {
+                loadItemDetails(itemId) // Перезагружаем детали для обновления UI
+            }
+            // Ошибки будут обработаны в Observer во фрагменте
+            _isBuyingNow.value = false
         }
     }
 }

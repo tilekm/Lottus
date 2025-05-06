@@ -8,25 +8,25 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-// import androidx.appcompat.app.AppCompatActivity // Больше не нужен
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels // Используем activityViewModels для AuthViewModel
-import androidx.fragment.app.viewModels // Используем viewModels для ProfileViewModel
+import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
+import androidx.navigation.fragment.findNavController // Импорт для навигации
+import com.bumptech.glide.Glide // Импорт Glide
 import kz.tilek.lottus.AuthActivity
+import kz.tilek.lottus.R // Импорт R для доступа к ID
 import kz.tilek.lottus.databinding.FragmentProfileBinding
-import kz.tilek.lottus.viewmodels.AuthViewModel // Импорт AuthViewModel
-import kz.tilek.lottus.viewmodels.ProfileViewModel // Импорт ProfileViewModel
+import kz.tilek.lottus.viewmodels.AuthViewModel
+import kz.tilek.lottus.viewmodels.ProfileViewModel
 
 class ProfileFragment : Fragment() {
 
     private var _binding: FragmentProfileBinding? = null
     private val binding get() = _binding!!
 
-    // ViewModel для данных профиля
     private val profileViewModel: ProfileViewModel by viewModels()
-    // ViewModel для аутентификации (используем activityViewModels, чтобы получить тот же экземпляр, что и в других фрагментах/активити)
     private val authViewModel: AuthViewModel by activityViewModels()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -37,39 +37,47 @@ class ProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Наблюдаем за состоянием загрузки профиля
         profileViewModel.userProfileState.observe(viewLifecycleOwner, Observer { result ->
-            binding.progressBar.isVisible = false // Скрываем прогрессбар
+            binding.progressBar.isVisible = false
 
             result.onSuccess { user ->
-                // Успешно загрузили, обновляем UI
                 binding.tvUsername.text = user.username
                 binding.tvUserEmail.text = user.email
-                // TODO: Загрузить аватар, если он есть (например, с помощью Glide/Picasso)
-                // binding.tvUserRating.text = "Рейтинг: ${user.rating}" // Если добавили рейтинг
+
+                // Загрузка аватара с помощью Glide
+                Glide.with(this)
+                    .load(user.profilePictureUrl) // Загружаем URL
+                    .placeholder(R.drawable.ic_person) // Плейсхолдер по умолчанию
+                    .error(R.drawable.ic_person) // Плейсхолдер при ошибке
+                    .circleCrop() // Делаем изображение круглым
+                    .into(binding.ivProfileAvatar)
+
+                // binding.tvUserRating.text = "Рейтинг: ${user.rating}"
             }.onFailure { exception ->
-                // Ошибка загрузки профиля
                 Toast.makeText(requireContext(), "Ошибка загрузки профиля: ${exception.message}", Toast.LENGTH_LONG).show()
-                // Можно показать заглушки или сообщение об ошибке в UI
                 binding.tvUsername.text = "Не удалось загрузить"
                 binding.tvUserEmail.text = ""
+                binding.ivProfileAvatar.setImageResource(R.drawable.ic_person) // Сброс аватара
             }
         })
 
-        // Наблюдаем за индикатором загрузки
         profileViewModel.isLoading.observe(viewLifecycleOwner, Observer { isLoading ->
             binding.progressBar.isVisible = isLoading
-            // Можно скрыть основные элементы UI во время загрузки
             binding.ivProfileAvatar.isVisible = !isLoading
             binding.tvUsername.isVisible = !isLoading
             binding.tvUserEmail.isVisible = !isLoading
+            binding.btnEditProfile.isEnabled = !isLoading // Отключаем кнопку редактирования
             binding.btnLogout.isEnabled = !isLoading
         })
 
-        // Загружаем данные текущего пользователя при создании фрагмента
         profileViewModel.loadCurrentUserProfile()
 
-        // Обработчик кнопки выхода
+        // --- НОВЫЙ ОБРАБОТЧИК ---
+        binding.btnEditProfile.setOnClickListener {
+            findNavController().navigate(R.id.action_profileFragment_to_userSettingsFragment)
+        }
+        // -----------------------
+
         binding.btnLogout.setOnClickListener {
             showLogoutConfirmationDialog()
         }
@@ -80,19 +88,13 @@ class ProfileFragment : Fragment() {
             .setTitle("Выход")
             .setMessage("Вы уверены, что хотите выйти?")
             .setPositiveButton("Да") { _, _ ->
-                // Вызываем метод logout из AuthViewModel
                 authViewModel.logout()
-
-                // Переходим на экран аутентификации
-                // Убедимся, что context не null
                 context?.let {
                     val intent = Intent(it, AuthActivity::class.java).apply {
-                        // Очищаем стек активностей
                         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                     }
                     startActivity(intent)
                 }
-                // activity?.finish() // finish() не нужен
             }
             .setNegativeButton("Нет", null)
             .show()

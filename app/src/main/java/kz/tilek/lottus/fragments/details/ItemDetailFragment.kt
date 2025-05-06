@@ -19,12 +19,11 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
-// Убираем Glide отсюда, он будет в адаптере
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kz.tilek.lottus.R
 import kz.tilek.lottus.adapters.BidAdapter
-import kz.tilek.lottus.adapters.ImagePagerAdapter // <-- Импорт адаптера изображений
+import kz.tilek.lottus.adapters.ImagePagerAdapter
 import kz.tilek.lottus.api.PlaceBidRequest
 import kz.tilek.lottus.data.TokenManager
 import kz.tilek.lottus.databinding.FragmentItemDetailBinding
@@ -37,7 +36,6 @@ import kz.tilek.lottus.websocket.WebSocketManager
 import java.math.BigDecimal
 import java.time.Duration
 import java.time.Instant
-// Убираем неиспользуемые импорты ZoneId, DateTimeFormatter, FormatStyle, Locale
 import java.util.concurrent.TimeUnit
 
 class ItemDetailFragment : Fragment() {
@@ -49,9 +47,9 @@ class ItemDetailFragment : Fragment() {
     private val args: ItemDetailFragmentArgs by navArgs()
 
     private lateinit var bidAdapter: BidAdapter
-    private lateinit var imageAdapter: ImagePagerAdapter // <-- Добавляем адаптер изображений
+    private lateinit var imageAdapter: ImagePagerAdapter
     private var countDownTimer: CountDownTimer? = null
-    private var currentItemData: ItemDetailData? = null
+    private var currentItemData: ItemDetailData? = null // Храним текущие данные
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -65,85 +63,97 @@ class ItemDetailFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         setupToolbar()
-        setupRecyclerViews() // <-- Переименовываем и настраиваем оба RecyclerView/ViewPager
+        setupRecyclerViews()
 
         val itemId = args.itemId
         val itemTopic = "/topic/items/$itemId/bids"
 
         WebSocketManager.subscribeToTopic(itemTopic)
 
-        // --- Наблюдение за WebSocket (без изменений) ---
         viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(
-                state = androidx.lifecycle.Lifecycle.State.STARTED
-            ) {
+            viewLifecycleOwner.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
                 WebSocketManager.bidMessagesFlow.collectLatest { bidMessage ->
                     if (bidMessage != null && bidMessage.itemId == itemId) {
                         Log.d("ItemDetailFragment", "Новая ставка через WS: ${bidMessage.bidAmount}")
-                        viewModel.loadItemDetails(itemId)
-                        Toast.makeText(requireContext(), "Новая ставка: ${bidMessage.bidAmount} ₸ от ${bidMessage.bidderUsername}", Toast.LENGTH_SHORT).show()
-                        // Сбрасываем значение, чтобы не обработать повторно при пересоздании View
+                        viewModel.loadItemDetails(itemId) // Перезагружаем данные
+                        Toast.makeText(
+                            requireContext(),
+                            "Новая ставка: ${bidMessage.bidAmount} ₸ от ${bidMessage.bidderUsername}",
+                            Toast.LENGTH_SHORT
+                        ).show()
                         WebSocketManager.bidMessagesFlow.value = null
                     }
                 }
             }
         }
-        viewLifecycleOwner.lifecycleScope.launchWhenStarted {
-            WebSocketManager.connectionState.collectLatest { state ->
-                Log.d("ItemDetailFragment", "WebSocket Connection State: $state")
-            }
-        }
-        // ---------------------------------------------
+        // ... (остальные WebSocket observers)
 
-        // --- Наблюдение за ViewModel (без изменений в логике, но bindItemData обновится) ---
         viewModel.itemDetailState.observe(viewLifecycleOwner, Observer { result ->
             binding.progressBar.isVisible = false
-            enableBidInput(true)
+            // enableBidInput(true) // Будет управляться в bindItemData
 
             result.onSuccess { data ->
-                currentItemData = data
-                bindItemData(data.item) // <-- Этот метод теперь будет загружать и картинки
+                currentItemData = data // Сохраняем актуальные данные
+                bindItemData(data.item, data.highestBid) // Передаем и лот, и высшую ставку
                 bindBidsData(data.bids, data.item)
                 startTimerIfNeeded(data.item)
             }.onFailure { exception ->
                 currentItemData = null
                 Toast.makeText(requireContext(), "Ошибка загрузки: ${exception.message}", Toast.LENGTH_LONG).show()
                 binding.collapsingToolbar.title = "Ошибка"
-                // Скрываем ViewPager и индикатор при ошибке
                 binding.viewPagerImages.isVisible = false
                 binding.dotsIndicator.isVisible = false
+                enableBidInput(false) // Отключаем ввод при ошибке
+                binding.btnBuyNow.isVisible = false // Скрываем кнопку "Купить сейчас"
             }
         })
 
         viewModel.isLoading.observe(viewLifecycleOwner, Observer { isLoading ->
             binding.progressBar.isVisible = isLoading
-            binding.appBarLayout.isVisible = !isLoading
-            binding.llPlaceBid.isVisible = !isLoading
-            // Скрываем ViewPager и индикатор во время загрузки
-            if (isLoading) {
+            if (!isLoading) { // Показываем контент только после загрузки
+                binding.appBarLayout.isVisible = true
+                // Видимость llPlaceBid и btnBuyNow будет управляться в bindItemData/updateBuyNowButtonVisibility
+            } else {
+                binding.appBarLayout.isVisible = false // Скрываем AppBar во время загрузки
+                binding.llPlaceBid.isVisible = false
+                binding.btnBuyNow.isVisible = false
                 binding.viewPagerImages.isVisible = false
                 binding.dotsIndicator.isVisible = false
             }
         })
 
         viewModel.placeBidState.observe(viewLifecycleOwner, Observer { result ->
-            binding.btnPlaceBid.isEnabled = true
-            binding.etBidAmount.isEnabled = true
-
+            // enableBidInput(true) // Уже управляется isPlacingBid
             result.onFailure { exception ->
                 Toast.makeText(requireContext(), "Ошибка ставки: ${exception.message}", Toast.LENGTH_LONG).show()
                 binding.tilBidAmount.error = exception.message
             }
-            // При успехе данные перезагрузятся через itemDetailState
+            // При успехе данные перезагрузятся через itemDetailState (вызов loadItemDetails в ViewModel)
         })
 
         viewModel.isPlacingBid.observe(viewLifecycleOwner, Observer { isPlacing ->
             binding.btnPlaceBid.isEnabled = !isPlacing
             binding.etBidAmount.isEnabled = !isPlacing
-            binding.tilBidAmount.error = null
+            if (!isPlacing) binding.tilBidAmount.error = null // Сбрасываем ошибку только когда не загружаемся
             binding.btnPlaceBid.text = if (isPlacing) "Отправка..." else "Ставка"
         })
-        // -----------------------------------------------------------------------
+
+        // --- Наблюдение за состоянием "Купить сейчас" ---
+        viewModel.buyNowState.observe(viewLifecycleOwner, Observer { result ->
+            result.onSuccess {
+                Toast.makeText(requireContext(), "Лот успешно куплен!", Toast.LENGTH_SHORT).show()
+                // UI обновится через itemDetailState после loadItemDetails
+            }
+            result.onFailure { exception ->
+                Toast.makeText(requireContext(), "Ошибка покупки: ${exception.message}", Toast.LENGTH_LONG).show()
+            }
+        })
+
+        viewModel.isBuyingNow.observe(viewLifecycleOwner, Observer { isBuying ->
+            binding.btnBuyNow.isEnabled = !isBuying // Блокируем кнопку во время процесса
+            // Можно добавить ProgressBar на кнопку или рядом
+        })
+        // ---------------------------------------------
 
         binding.btnPlaceBid.setOnClickListener {
             placeBid(itemId, currentItemData)
@@ -158,75 +168,83 @@ class ItemDetailFragment : Fragment() {
         binding.toolbar.setNavigationOnClickListener {
             findNavController().popBackStack()
         }
-        binding.collapsingToolbar.title = " "
+        binding.collapsingToolbar.title = " " // Изначально пустое
     }
 
-    // Настраиваем оба адаптера
     private fun setupRecyclerViews() {
-        // Адаптер для ставок
         bidAdapter = BidAdapter(emptyList())
         binding.rvBids.layoutManager = LinearLayoutManager(requireContext())
         binding.rvBids.adapter = bidAdapter
         binding.rvBids.isNestedScrollingEnabled = false
 
-        // Адаптер для изображений
         imageAdapter = ImagePagerAdapter(emptyList())
         binding.viewPagerImages.adapter = imageAdapter
-
-        // Связываем индикатор с ViewPager2
         binding.dotsIndicator.attachTo(binding.viewPagerImages)
     }
 
-    private fun bindItemData(item: AuctionItem) {
+    private fun bindItemData(item: AuctionItem, highestBid: Bid?) {
         binding.collapsingToolbar.title = item.title
         binding.tvItemTitle.text = item.title
         binding.tvStartPrice.text = "Начальная: ${FormatUtils.formatPrice(item.startPrice)}"
         binding.tvMinStep.text = "Мин. шаг: ${FormatUtils.formatPrice(item.minBidStep)}"
         binding.tvItemDescription.text = item.description ?: "Нет описания"
-        binding.tvSellerUsername.text = "${item.seller.username} (Рейтинг: ${item.seller.rating})"
-        binding.tvItemStatus.text = "Статус: ${item.status.replaceFirstChar { it.uppercase() }}" // Используем uppercase()
+        binding.tvItemStatus.text = "Статус: ${item.status.replaceFirstChar { it.uppercase() }}"
 
-        // Кнопка "Купить сейчас" (без изменений)
-        if (item.buyNowPrice != null && item.status.equals("active", ignoreCase = true)) {
-            binding.btnBuyNow.isVisible = true
-            binding.btnBuyNow.text = "Купить сейчас за ${FormatUtils.formatPrice(item.buyNowPrice)}"
-            binding.btnBuyNow.setOnClickListener { buyNow(item) }
-        } else {
-            binding.btnBuyNow.isVisible = false
-        }
+        updateBuyNowButtonVisibility(item, highestBid) // Обновляем видимость кнопки "Купить сейчас"
 
-        // --- ЗАГРУЗКА ИЗОБРАЖЕНИЙ ---
         val imageUrls = item.imageUrls
         if (!imageUrls.isNullOrEmpty()) {
             imageAdapter.updateData(imageUrls)
             binding.viewPagerImages.isVisible = true
-            // Показываем индикатор только если картинок больше одной
             binding.dotsIndicator.isVisible = imageUrls.size > 1
         } else {
-            // Если картинок нет, скрываем ViewPager и индикатор
-            imageAdapter.updateData(emptyList()) // Очищаем адаптер
+            imageAdapter.updateData(emptyList())
             binding.viewPagerImages.isVisible = false
             binding.dotsIndicator.isVisible = false
-            // Можно показать плейсхолдер в самом ViewPager или отдельном ImageView, если нужно
-            // Например, можно было бы не скрывать ViewPager, а показать в нем один элемент с плейсхолдером
-            // imageAdapter.updateData(listOf("placeholder")) // и обработать "placeholder" в адаптере
         }
-        // ---------------------------
 
-        enableBidInput(item.status.equals("active", ignoreCase = true))
+        val sellerText = "${item.seller.username} (Рейтинг: ${item.seller.rating})"
+        binding.tvSellerUsername.text = sellerText
+        binding.tvSellerUsername.setOnClickListener {
+            val action = ItemDetailFragmentDirections.actionItemDetailFragmentToUserProfileFragment(item.seller.id)
+            findNavController().navigate(action)
+        }
+
+        // Управляем видимостью и активностью поля для ставки
+        val auctionIsActive = item.status.equals("active", ignoreCase = true)
+        enableBidInput(auctionIsActive)
     }
 
-    // bindBidsData, startTimerIfNeeded, formatDuration, enableBidInput, placeBid, buyNow - без изменений
+    private fun updateBuyNowButtonVisibility(item: AuctionItem, currentHighestBid: Bid?) {
+        val buyNowPrice = item.buyNowPrice
+        val currentPrice = currentHighestBid?.bidAmount ?: item.startPrice
+
+        val canBuyNow = buyNowPrice != null &&
+                item.status.equals("active", ignoreCase = true) &&
+                buyNowPrice > currentPrice && // Цена "Купить сейчас" должна быть СТРОГО БОЛЬШЕ текущей цены
+                item.seller.id != TokenManager.userId // Продавец не может купить свой лот
+
+        binding.btnBuyNow.isVisible = canBuyNow
+        if (canBuyNow) {
+            binding.btnBuyNow.text = "Купить сейчас за ${FormatUtils.formatPrice(buyNowPrice!!)}"
+            binding.btnBuyNow.setOnClickListener {
+                showBuyNowConfirmationDialog(item)
+            }
+        } else {
+            binding.btnBuyNow.setOnClickListener(null) // Убираем слушатель, если кнопка неактивна
+        }
+    }
+
 
     private fun bindBidsData(bids: List<Bid>, item: AuctionItem) {
         bidAdapter.updateData(bids)
         binding.tvNoBids.isVisible = bids.isEmpty()
         binding.rvBids.isVisible = bids.isNotEmpty()
 
-        val highestBid = bids.firstOrNull()
+        val highestBid = bids.firstOrNull() // Уже отсортированы по убыванию суммы, затем по времени
         val currentPrice = highestBid?.bidAmount ?: item.startPrice
 
-        binding.tvCurrentPrice.text = "${FormatUtils.formatPrice(currentPrice)}"
+        binding.tvCurrentPrice.text = FormatUtils.formatPrice(currentPrice)
         if (highestBid != null) {
             binding.tvHighestBidder.text = "(от ${highestBid.bidder.username})"
             binding.tvHighestBidder.isVisible = true
@@ -240,42 +258,46 @@ class ItemDetailFragment : Fragment() {
 
     private fun startTimerIfNeeded(item: AuctionItem) {
         countDownTimer?.cancel()
+        val auctionIsActive = item.status.equals("active", ignoreCase = true)
 
-        if (item.status.equals("active", ignoreCase = true)) {
+        if (auctionIsActive) {
             try {
                 val endTime = Instant.parse(item.endTime)
                 val now = Instant.now()
                 val durationMillis = Duration.between(now, endTime).toMillis()
 
                 if (durationMillis > 0) {
+                    binding.tvTimeRemaining.setTextColor(resources.getColor(R.color.md_theme_secondary, null)) // Цвет для активного таймера
                     countDownTimer = object : CountDownTimer(durationMillis, 1000) {
                         override fun onTick(millisUntilFinished: Long) {
                             binding.tvTimeRemaining.text = formatDuration(millisUntilFinished)
-                            binding.tvTimeRemaining.setTextColor(resources.getColor(android.R.color.holo_red_dark, null))
                         }
 
                         override fun onFinish() {
                             binding.tvTimeRemaining.text = "Аукцион завершен"
                             binding.tvTimeRemaining.setTextColor(resources.getColor(R.color.md_theme_onSurfaceVariant, null))
                             enableBidInput(false)
-                            // viewModel.loadItemDetails(args.itemId) // Можно раскомментировать для автообновления
+                            updateBuyNowButtonVisibility(item, currentItemData?.highestBid) // Обновляем кнопку
+                            // viewModel.loadItemDetails(args.itemId) // Можно для автообновления
                         }
                     }.start()
                 } else {
                     binding.tvTimeRemaining.text = "Аукцион завершен"
                     binding.tvTimeRemaining.setTextColor(resources.getColor(R.color.md_theme_onSurfaceVariant, null))
-                    enableBidInput(false)
+                    binding.tvItemStatus.text = "Статус: COMPLETED"
+                    // enableBidInput(false) // Уже будет false из-за статуса
                 }
             } catch (e: Exception) {
                 Log.e("ItemDetailFragment", "Ошибка парсинга или расчета времени", e)
                 binding.tvTimeRemaining.text = "Ошибка времени"
-                enableBidInput(false)
             }
         } else {
             binding.tvTimeRemaining.text = "Статус: ${item.status.replaceFirstChar { it.uppercase() }}"
             binding.tvTimeRemaining.setTextColor(resources.getColor(R.color.md_theme_onSurfaceVariant, null))
-            enableBidInput(false)
         }
+        // Видимость и активность полей ввода и кнопки "Купить сейчас" управляются в bindItemData и updateBuyNowButtonVisibility
+        enableBidInput(auctionIsActive)
+        updateBuyNowButtonVisibility(item, currentItemData?.highestBid)
     }
 
     private fun formatDuration(millis: Long): String {
@@ -294,8 +316,15 @@ class ItemDetailFragment : Fragment() {
 
     private fun enableBidInput(enabled: Boolean) {
         binding.llPlaceBid.isVisible = enabled
-        binding.etBidAmount.isEnabled = enabled
-        binding.btnPlaceBid.isEnabled = enabled
+        if (enabled) {
+            binding.etBidAmount.isEnabled = true
+            binding.btnPlaceBid.isEnabled = true
+        } else {
+            binding.etBidAmount.isEnabled = false
+            binding.btnPlaceBid.isEnabled = false
+            binding.etBidAmount.text?.clear()
+            binding.tilBidAmount.error = null
+        }
     }
 
     private fun placeBid(itemId: String, currentData: ItemDetailData?) {
@@ -306,75 +335,64 @@ class ItemDetailFragment : Fragment() {
             Toast.makeText(requireContext(), "Не удалось определить пользователя", Toast.LENGTH_SHORT).show()
             return
         }
-
         binding.tilBidAmount.error = null
-
-        val amount = try {
-            BigDecimal(amountStr)
-        } catch (e: Exception) {
-            binding.tilBidAmount.error = "Некорректная сумма"
-            return
+        val amount = try { BigDecimal(amountStr) } catch (e: Exception) {
+            binding.tilBidAmount.error = "Некорректная сумма"; return
         }
-
         if (amount <= BigDecimal.ZERO) {
-            binding.tilBidAmount.error = "Сумма должна быть положительной"
-            return
+            binding.tilBidAmount.error = "Сумма должна быть положительной"; return
         }
 
-        if (currentData != null) {
-            val item = currentData.item
-            val currentPrice = currentData.highestBid?.bidAmount ?: item.startPrice
-            val minAllowedBid = currentPrice.add(item.minBidStep)
+        val item = currentData?.item
+        if (item == null) {
+            Toast.makeText(requireContext(), "Данные лота не загружены.", Toast.LENGTH_SHORT).show(); return
+        }
+        if (item.seller.id == bidderId) {
+            binding.tilBidAmount.error = "Продавец не может делать ставки"; return
+        }
 
-            if (amount < minAllowedBid) {
-                binding.tilBidAmount.error = "Ставка должна быть не менее ${FormatUtils.formatPrice(minAllowedBid)}"
-                return
-            }
+        val currentPrice = currentData.highestBid?.bidAmount ?: item.startPrice
+        val minAllowedBid = currentPrice.add(item.minBidStep)
 
-            if (item.seller.id == bidderId) {
-                binding.tilBidAmount.error = "Продавец не может делать ставки"
-                return
-            }
+        if (amount < minAllowedBid) {
+            binding.tilBidAmount.error = "Ставка должна быть не менее ${FormatUtils.formatPrice(minAllowedBid)}"; return
+        }
 
+        // Проверка на buyNowPrice при обычной ставке (если цена ставки достигает buyNowPrice)
+        if (item.buyNowPrice != null && amount >= item.buyNowPrice) {
+            // Предлагаем пользователю подтвердить покупку по цене "Купить сейчас"
+            // или просто делаем ставку по buyNowPrice
+            AlertDialog.Builder(requireContext())
+                .setTitle("Достигнута цена 'Купить сейчас'")
+                .setMessage("Ваша ставка достигла или превысила цену 'Купить сейчас' (${FormatUtils.formatPrice(item.buyNowPrice)}). " +
+                        "Лот будет куплен по этой цене. Продолжить?")
+                .setPositiveButton("Да, купить") { _, _ ->
+                    viewModel.placeBid(PlaceBidRequest(bidderId, itemId, item.buyNowPrice)) // Ставка по цене buyNow
+                }
+                .setNegativeButton("Отмена", null)
+                .show()
         } else {
-            Toast.makeText(requireContext(), "Не удалось проверить минимальную ставку. Попробуйте обновить.", Toast.LENGTH_SHORT).show()
-            return
+            viewModel.placeBid(PlaceBidRequest(bidderId, itemId, amount))
         }
-
-        viewModel.placeBid(PlaceBidRequest(bidderId, itemId, amount))
     }
 
-    private fun buyNow(item: AuctionItem) {
-        val bidderId = TokenManager.userId
-        val buyNowPrice = item.buyNowPrice
-
-        if (bidderId == null || buyNowPrice == null) {
-            Toast.makeText(requireContext(), "Невозможно выполнить покупку", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        if (item.seller.id == bidderId) {
-            Toast.makeText(requireContext(), "Продавец не может купить свой лот", Toast.LENGTH_SHORT).show()
-            return
-        }
-
+    private fun showBuyNowConfirmationDialog(item: AuctionItem) {
+        val buyNowPrice = item.buyNowPrice ?: return
         AlertDialog.Builder(requireContext())
             .setTitle("Купить сейчас")
             .setMessage("Вы уверены, что хотите купить лот '${item.title}' за ${FormatUtils.formatPrice(buyNowPrice)}?")
             .setPositiveButton("Купить") { _, _ ->
-                viewModel.placeBid(PlaceBidRequest(bidderId, item.id, buyNowPrice))
+                viewModel.executeBuyNow(item.id)
             }
             .setNegativeButton("Отмена", null)
             .show()
     }
-
 
     override fun onDestroyView() {
         super.onDestroyView()
         countDownTimer?.cancel()
         val itemTopic = "/topic/items/${args.itemId}/bids"
         WebSocketManager.unsubscribeFromTopic(itemTopic)
-        // Обнуляем адаптер ViewPager, чтобы избежать утечек
         binding.viewPagerImages.adapter = null
         _binding = null
     }

@@ -4,6 +4,7 @@ package kz.tilek.lottus.repositories
 import kz.tilek.lottus.api.ApiClient
 import kz.tilek.lottus.api.CreateAuctionRequest // <-- Убедись, что импорт правильный
 import kz.tilek.lottus.models.AuctionItem
+import kz.tilek.lottus.models.Bid
 import kz.tilek.lottus.util.parseError
 
 class ItemRepository {
@@ -77,6 +78,20 @@ class ItemRepository {
                     ?: Result.failure(Exception("Не получен созданный лот от сервера."))
             } else {
                 Result.failure(Exception("Ошибка создания лота: ${parseError(response)}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun buyNowForItem(itemId: String): Result<Bid> {
+        return try {
+            val response = apiService.buyNowForItem(itemId)
+            if (response.isSuccessful) {
+                response.body()?.let { Result.success(it) }
+                    ?: Result.failure(Exception("Не получен ответ о покупке от сервера."))
+            } else {
+                Result.failure(Exception("Ошибка покупки лота: ${parseError(response)}"))
             }
         } catch (e: Exception) {
             Result.failure(e)

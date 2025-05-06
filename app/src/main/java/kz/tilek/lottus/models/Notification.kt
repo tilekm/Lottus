@@ -8,6 +8,6 @@ data class Notification(
     @SerializedName("id") val id: String, // UUID -> String
     @SerializedName("user") val user: User, // Связь с пользователем
     @SerializedName("message") val message: String,
-    @SerializedName("read") val isRead: Boolean, // isRead -> read (соответствует JSON)
+    @SerializedName("isRead") val isRead: Boolean, // isRead -> read (соответствует JSON)
     @SerializedName("createdAt") val createdAt: String // Instant -> String
 )
