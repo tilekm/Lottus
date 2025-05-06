@@ -1,8 +1,8 @@
-// ./app/src/main/java/kz/tilek/lottus/repositories/ItemRepository.kt
 package kz.tilek.lottus.repositories
 
 import kz.tilek.lottus.api.ApiClient
-import kz.tilek.lottus.api.CreateAuctionRequest // <-- Убедись, что импорт правильный
+import kz.tilek.lottus.api.CreateAuctionRequest
+import kz.tilek.lottus.api.PageResponse
 import kz.tilek.lottus.models.AuctionItem
 import kz.tilek.lottus.models.Bid
 import kz.tilek.lottus.util.parseError
@@ -10,27 +10,28 @@ import kz.tilek.lottus.util.parseError
 class ItemRepository {
     private val apiService = ApiClient.instance
 
-    // getActiveItems, getAllItems, getItemDetails, getItemsBySeller - без изменений
-    suspend fun getActiveItems(): Result<List<AuctionItem>> {
+    /**
+     * Получает страницу с аукционами.
+     * @param page Номер страницы (0-indexed).
+     * @param size Количество элементов на странице.
+     * @param viewType Тип фильтра ("ALL", "ACTIVE", "SCHEDULED").
+     * @param searchTerm Поисковый запрос (может быть null или пустым).
+     * @param sort Параметр сортировки (например, "createdAt,desc").
+     */
+    suspend fun getItems(
+        page: Int,
+        size: Int,
+        viewType: String,
+        searchTerm: String?, // <-- НОВЫЙ ПАРАМЕТР
+        sort: String? = "createdAt,desc"
+    ): Result<PageResponse<AuctionItem>> {
         return try {
-            val response = apiService.getActiveItems()
+            val response = apiService.getItems(page, size, viewType, searchTerm, sort) // <-- Передаем searchTerm
             if (response.isSuccessful) {
-                Result.success(response.body() ?: emptyList())
+                response.body()?.let { Result.success(it) }
+                    ?: Result.failure(Exception("Не получена страница с лотами от сервера."))
             } else {
-                Result.failure(Exception("Ошибка получения активных лотов: ${parseError(response)}"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    suspend fun getAllItems(): Result<List<AuctionItem>> {
-        return try {
-            val response = apiService.getAllItems()
-            if (response.isSuccessful) {
-                Result.success(response.body() ?: emptyList())
-            } else {
-                Result.failure(Exception("Ошибка получения всех лотов: ${parseError(response)}"))
+                Result.failure(Exception("Ошибка получения страницы лотов: ${parseError(response)}"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -64,14 +65,8 @@ class ItemRepository {
         }
     }
 
-
-    /**
-     * Создает новый аукцион.
-     * Принимает готовый CreateAuctionRequest.
-     */
-    suspend fun createItem(request: CreateAuctionRequest): Result<AuctionItem> { // <-- Принимаем request
+    suspend fun createItem(request: CreateAuctionRequest): Result<AuctionItem> {
         return try {
-            // Просто передаем request в ApiService
             val response = apiService.createItem(request)
             if (response.isSuccessful) {
                 response.body()?.let { Result.success(it) }

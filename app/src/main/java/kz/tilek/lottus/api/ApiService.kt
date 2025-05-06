@@ -1,13 +1,11 @@
-// ./app/src/main/java/kz/tilek/lottus/api/ApiService.kt
-
 package kz.tilek.lottus.api
 
 import com.google.gson.annotations.SerializedName
-import kz.tilek.lottus.models.AuctionItem // Импорт исправленной модели
-import kz.tilek.lottus.models.Bid // Импорт новой модели
-import kz.tilek.lottus.models.Notification // Импорт новой модели
+import kz.tilek.lottus.models.AuctionItem
+import kz.tilek.lottus.models.Bid
+import kz.tilek.lottus.models.Notification
 import kz.tilek.lottus.models.Review
-import kz.tilek.lottus.models.User // Импорт исправленной модели
+import kz.tilek.lottus.models.User
 import okhttp3.MultipartBody
 import retrofit2.Response
 import retrofit2.http.Body
@@ -17,67 +15,57 @@ import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Part
 import retrofit2.http.Path
-import java.math.BigDecimal // Импорт BigDecimal
+import retrofit2.http.Query
+import java.math.BigDecimal
 
-// --- Requests ---
 data class UserProfileUpdateRequest(
-    @SerializedName("username") val username: String?, // Nullable, если не меняем
-    @SerializedName("email") val email: String?       // Nullable, если не меняем
-    // Добавь другие поля, если они будут редактироваться (например, bio)
+    @SerializedName("username") val username: String?,
+    @SerializedName("email") val email: String?
 )
 
-// Соответствует AuthenticationRequest.java
 data class LoginRequest(
-    @SerializedName("username") val username: String, // email -> username
+    @SerializedName("username") val username: String,
     @SerializedName("password") val password: String
 )
 
-// Соответствует UserRegistrationRequest.java
 data class RegisterRequest(
-    @SerializedName("username") val username: String, // name -> username
+    @SerializedName("username") val username: String,
     @SerializedName("email") val email: String,
     @SerializedName("password") val password: String
 )
 
-// Соответствует ItemCreateRequest.java
 data class CreateAuctionRequest(
-    @SerializedName("sellerId") val sellerId: String, // Добавлено (UUID -> String)
+    @SerializedName("sellerId") val sellerId: String,
     @SerializedName("title") val title: String,
-    @SerializedName("description") val description: String?, // Nullable
-    @SerializedName("startPrice") val startPrice: BigDecimal, // startingPrice: Double -> startPrice: BigDecimal
-    @SerializedName("buyNowPrice") val buyNowPrice: BigDecimal?, // Добавлено, Nullable
-    @SerializedName("minBidStep") val minBidStep: BigDecimal, // Добавлено
-    @SerializedName("startTime") val startTime: String, // Добавлено (Instant -> String)
-    @SerializedName("endTime") val endTime: String, // endTime: Long -> endTime: String
-    @SerializedName("imageUrls") val imageUrls: List<String>? // Список URL загруженных
-    // imageUrl удален
+    @SerializedName("description") val description: String?,
+    @SerializedName("startPrice") val startPrice: BigDecimal,
+    @SerializedName("buyNowPrice") val buyNowPrice: BigDecimal?,
+    @SerializedName("minBidStep") val minBidStep: BigDecimal,
+    @SerializedName("startTime") val startTime: String,
+    @SerializedName("endTime") val endTime: String,
+    @SerializedName("imageUrls") val imageUrls: List<String>?
 )
 
-// Соответствует BidRequest.java
-data class PlaceBidRequest( // Переименовано для ясности
-    @SerializedName("bidderId") val bidderId: String, // Добавлено (UUID -> String)
-    @SerializedName("itemId") val itemId: String, // Добавлено (UUID -> String)
-    @SerializedName("bidAmount") val bidAmount: BigDecimal // amount: Double -> bidAmount: BigDecimal
+data class PlaceBidRequest(
+    @SerializedName("bidderId") val bidderId: String,
+    @SerializedName("itemId") val itemId: String,
+    @SerializedName("bidAmount") val bidAmount: BigDecimal
 )
 
 data class ReviewCreateRequest(
-    @SerializedName("reviewedUserId") val reviewedUserId: String, // UUID -> String
+    @SerializedName("reviewedUserId") val reviewedUserId: String,
     @SerializedName("rating") val rating: BigDecimal,
-    @SerializedName("comment") val comment: String? // Nullable
+    @SerializedName("comment") val comment: String?
 )
 
-// --- Responses ---
-
-// Соответствует AuthenticationResponse.java
+// --- Responses (без изменений LoginResponse, BidMessage, FileUploadResponse, PageResponse) ---
 data class LoginResponse(
     @SerializedName("token") val token: String,
-    @SerializedName("userId") val userId: String, // Добавлено
-    @SerializedName("username") val username: String, // Добавлено
-    @SerializedName("email") val email: String     // Добавлено
-    // user удален, т.к. его нет в AuthenticationResponse.java
+    @SerializedName("userId") val userId: String,
+    @SerializedName("username") val username: String,
+    @SerializedName("email") val email: String
 )
 
-// Для WebSocket сообщений, соответствует BidMessage.java
 data class BidMessage(
     @SerializedName("bidId") val bidId: String,
     @SerializedName("itemId") val itemId: String,
@@ -85,7 +73,7 @@ data class BidMessage(
     @SerializedName("bidderId") val bidderId: String,
     @SerializedName("bidderUsername") val bidderUsername: String,
     @SerializedName("bidAmount") val bidAmount: BigDecimal,
-    @SerializedName("createdAt") val createdAt: String, // Instant -> String
+    @SerializedName("createdAt") val createdAt: String,
     @SerializedName("nextMinimumBid") val nextMinimumBid: BigDecimal
 )
 
@@ -94,66 +82,61 @@ data class FileUploadResponse(
 )
 
 
-// --- ApiService Interface ---
-// (Интерфейс будет исправлен на следующем шаге)
 interface ApiService {
-    // Методы будут обновлены позже...
-    @POST("api/auth/login") // Добавлен префикс /api/
+    @POST("api/auth/login")
     suspend fun login(@Body loginRequest: LoginRequest): Response<LoginResponse>
 
-    @POST("api/users/register") // Добавлен префикс /api/ и исправлен путь
-    suspend fun register(@Body registerRequest: RegisterRequest): Response<User> // Бэкенд возвращает User при регистрации
+    @POST("api/users/register")
+    suspend fun register(@Body registerRequest: RegisterRequest): Response<User>
 
-    // Users
     @GET("api/users/{id}")
-    suspend fun getUserProfile(@Path("id") userId: String): Response<User> // Пока оставляем User, но помним, что это публичные данные
+    suspend fun getUserProfile(@Path("id") userId: String): Response<User>
 
-    // НОВЫЙ МЕТОД для получения данных ТЕКУЩЕГО пользователя
     @GET("api/users/me")
-    suspend fun getCurrentUserProfile(): Response<User> // Ожидаем полный профиль (User модель должна соответствовать)
+    suspend fun getCurrentUserProfile(): Response<User>
 
     @GET("api/users/by-username/{username}")
-    suspend fun getUserByUsername(@Path("username") username: String): Response<User> // Тоже публичный профиль
+    suspend fun getUserByUsername(@Path("username") username: String): Response<User>
 
     @PUT("api/users/me")
     suspend fun updateCurrentUserProfile(
         @Body updateRequest: UserProfileUpdateRequest
-    ): Response<User> // Ожидаем обновленный полный профиль
+    ): Response<User>
 
-
-    // Items (Auctions)
     @GET("api/items")
-    suspend fun getAllItems(): Response<List<AuctionItem>>
+    suspend fun getItems(
+        @Query("page") page: Int,
+        @Query("size") size: Int,
+        @Query("viewType") viewType: String,
+        @Query("searchTerm") searchTerm: String?, // <-- НОВЫЙ ПАРАМЕТР для поиска (nullable)
+        @Query("sort") sort: String? = "createdAt,desc"
+    ): Response<PageResponse<AuctionItem>>
+    // ------------------------------------------------------------------------------------
 
     @POST("api/items/{itemId}/buy-now")
-    suspend fun buyNowForItem(@Path("itemId") itemId: String): Response<Bid> // Ожидаем Bid в ответе
-
-    @GET("api/items/active")
-    suspend fun getActiveItems(): Response<List<AuctionItem>>
+    suspend fun buyNowForItem(@Path("itemId") itemId: String): Response<Bid>
 
     @GET("api/items/{id}")
     suspend fun getItemDetails(@Path("id") itemId: String): Response<AuctionItem>
 
     @POST("api/items")
-    suspend fun createItem(@Body createAuctionRequest: CreateAuctionRequest): Response<AuctionItem> // Исправлен тип запроса и ответа
+    suspend fun createItem(@Body createAuctionRequest: CreateAuctionRequest): Response<AuctionItem>
 
     @GET("api/items/seller/{sellerId}")
     suspend fun getItemsBySeller(@Path("sellerId") sellerId: String): Response<List<AuctionItem>>
 
-    // Bids
     @POST("api/bids")
-    suspend fun placeBid(@Body placeBidRequest: PlaceBidRequest): Response<Bid> // Исправлен тип запроса и ответа
+    suspend fun placeBid(@Body placeBidRequest: PlaceBidRequest): Response<Bid>
 
     @GET("api/bids/item/{itemId}")
     suspend fun getBidsForItem(@Path("itemId") itemId: String): Response<List<Bid>>
 
     @GET("api/bids/item/{itemId}/highest")
-    suspend fun getHighestBidForItem(@Path("itemId") itemId: String): Response<Bid> // Может вернуть 204 No Content, обработать в репозитории
+    suspend fun getHighestBidForItem(@Path("itemId") itemId: String): Response<Bid>
 
     @GET("api/bids/user/{userId}")
     suspend fun getUserBidHistory(@Path("userId") userId: String): Response<List<Bid>>
 
-    // Notifications
     @GET("api/notifications/user/{userId}")
     suspend fun getAllNotifications(@Path("userId") userId: String): Response<List<Notification>>
 
@@ -161,23 +144,17 @@ interface ApiService {
     suspend fun getUnreadNotifications(@Path("userId") userId: String): Response<List<Notification>>
 
     @POST("api/notifications/{id}/read")
-    suspend fun markNotificationAsRead(@Path("id") notificationId: String): Response<Unit> // Ответ без тела (Void/Unit)
+    suspend fun markNotificationAsRead(@Path("id") notificationId: String): Response<Unit>
 
-    // Media
-    @Multipart // Указываем, что это multipart запрос
+    @Multipart
     @POST("api/media/upload")
     suspend fun uploadImage(
-        @Part file: MultipartBody.Part // Сам файл
-        // Можно добавить @Part("description") description: RequestBody, если нужно передать доп. данные
-    ): Response<FileUploadResponse> // Ожидаем ответ с URL файла
+        @Part file: MultipartBody.Part
+    ): Response<FileUploadResponse>
 
-    // --- Reviews ---
-    // НОВЫЙ МЕТОД для получения отзывов О пользователе
     @GET("api/users/{userId}/reviews")
     suspend fun getReviewsForUser(@Path("userId") userId: String): Response<List<Review>>
 
-    // НОВЫЙ МЕТОД для создания отзыва (понадобится на следующем шаге)
     @POST("api/reviews")
     suspend fun createReview(@Body reviewRequest: ReviewCreateRequest): Response<Review>
-
 }
