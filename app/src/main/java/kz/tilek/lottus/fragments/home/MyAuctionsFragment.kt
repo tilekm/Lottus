@@ -123,23 +123,37 @@ class MyAuctionsFragment : Fragment() {
     }
 
     private fun setupChipGroup() {
-        binding.chipGroupFilterMyAuctions.setOnCheckedStateChangeListener { group, checkedIds ->
-            val checkedId = if (checkedIds.isNotEmpty()) checkedIds[0] else View.NO_ID
+        // Начальный выбор чипа обрабатывается в onViewCreated через viewModel.currentFilterType.observe
+        // и вызов updateChipSelection, который делает group.check(chipId).
+        // Listener будет корректно инициализирован после этого.
 
+        binding.chipGroupFilterMyAuctions.setOnCheckedStateChangeListener { group, checkedIds ->
+            // Получаем фильтр, который был активен в ViewModel ДО этого действия пользователя
+            val activeFilterBeforeUserAction = viewModel.getCurrentFilterValue()
+            val checkedId = checkedIds.firstOrNull() // Безопасное получение ID
+
+            if (checkedId == null) { // Пользователь попытался отменить выбор
+                // Повторно выбираем чип, который соответствовал фильтру ДО попытки отмены
+                val chipIdToReselect = when (activeFilterBeforeUserAction) {
+                    MyAuctionFilterType.PARTICIPATING -> R.id.chipParticipating
+                    MyAuctionFilterType.WON -> R.id.chipWon
+                    MyAuctionFilterType.CREATED -> R.id.chipCreated
+                    // Enum MyAuctionFilterType должен покрывать все состояния, else не нужен
+                }
+                group.check(chipIdToReselect) // Это действие снова вызовет listener
+                return@setOnCheckedStateChangeListener // Выходим
+            }
+
+            // Если чип выбран (checkedId не null)
             val newFilter = when (checkedId) {
                 R.id.chipParticipating -> MyAuctionFilterType.PARTICIPATING
                 R.id.chipWon -> MyAuctionFilterType.WON
                 R.id.chipCreated -> MyAuctionFilterType.CREATED
-                View.NO_ID -> {
-                    // Если все чипы сняты, принудительно выбираем "Участвую"
-                    binding.chipGroupFilterMyAuctions.check(R.id.chipParticipating)
-                    MyAuctionFilterType.PARTICIPATING
-                }
-                else -> viewModel.getCurrentFilterValue() // Не должно произойти
+                // Эта ветка не должна выполниться
+                else -> activeFilterBeforeUserAction
             }
 
-            // Вызываем setFilter, ViewModel сама проверит, нужно ли делать loadMyAuctions
-            if (viewModel.getCurrentFilterValue() != newFilter || !viewModel.getCurrentSearchTermValue().isNullOrEmpty() || checkedId == View.NO_ID) {
+            if (activeFilterBeforeUserAction != newFilter || !viewModel.getCurrentSearchTermValue().isNullOrEmpty()) {
                 if (searchView != null && !viewModel.getCurrentSearchTermValue().isNullOrEmpty()) {
                     searchView?.setQuery("", false)
                     searchView?.isIconified = true
@@ -148,6 +162,7 @@ class MyAuctionsFragment : Fragment() {
             }
         }
     }
+
 
     private fun updateChipSelection(filterType: MyAuctionFilterType) {
         val chipId = when (filterType) {

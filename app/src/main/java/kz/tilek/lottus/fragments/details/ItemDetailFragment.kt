@@ -204,6 +204,7 @@ class ItemDetailFragment : Fragment() {
         }
 
         val sellerText = "${item.seller.username} (Рейтинг: ${item.seller.rating})"
+        Log.d("ItemDetailFragment", "All user fields mapped: ${item.seller.username}, ${item.seller.rating}")
         binding.tvSellerUsername.text = sellerText
         binding.tvSellerUsername.setOnClickListener {
             val action = ItemDetailFragmentDirections.actionItemDetailFragmentToUserProfileFragment(item.seller.id)

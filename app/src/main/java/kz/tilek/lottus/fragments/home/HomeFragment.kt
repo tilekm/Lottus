@@ -139,50 +139,60 @@ class HomeFragment : Fragment() {
     }
 
     private fun setupChipGroup() {
-        // Устанавливаем начальное состояние чипов в соответствии с ViewModel
-        // Это должно быть сделано до установки слушателя, чтобы избежать лишнего вызова при инициализации
-        val currentVmFilter = viewModel.getCurrentFilter()
-        val initialChipId = when (currentVmFilter) {
+        val currentVmFilterInitial = viewModel.getCurrentFilter()
+        val initialChipId = when (currentVmFilterInitial) {
             AuctionFilterType.ACTIVE -> R.id.chipActive
             AuctionFilterType.SCHEDULED -> R.id.chipScheduled
             AuctionFilterType.ALL -> R.id.chipAll
-            else -> R.id.chipActive // По умолчанию
+            else -> R.id.chipActive // По умолчанию, если что-то пошло не так
         }
+        // Проверяем, отличается ли текущий выбранный чип от того, что должен быть выбран
+        // Это предотвратит лишний вызов listener'а при инициализации, если чип уже выбран правильно
         if (binding.chipGroupFilter.checkedChipId != initialChipId) {
             binding.chipGroupFilter.check(initialChipId)
         }
 
-
         binding.chipGroupFilter.setOnCheckedStateChangeListener { group, checkedIds ->
-            val checkedId = if (checkedIds.isNotEmpty()) checkedIds[0] else View.NO_ID
+            // Получаем фильтр, который был активен в ViewModel ДО этого действия пользователя
+            val activeFilterBeforeUserAction = viewModel.getCurrentFilter()
+            val checkedId = checkedIds.firstOrNull() // Безопасное получение ID выбранного чипа
 
+            if (checkedId == null) { // Пользователь попытался отменить выбор единственного активного чипа
+                // Повторно выбираем чип, который соответствовал фильтру ДО попытки отмены
+                val chipIdToReselect = when (activeFilterBeforeUserAction) {
+                    AuctionFilterType.ACTIVE -> R.id.chipActive
+                    AuctionFilterType.SCHEDULED -> R.id.chipScheduled
+                    AuctionFilterType.ALL -> R.id.chipAll
+                    else -> R.id.chipActive // Запасной вариант
+                }
+                group.check(chipIdToReselect) // Это действие снова вызовет listener
+                // В следующем вызове listener'a checkedId уже не будет null,
+                // и newFilter будет равен activeFilterBeforeUserAction,
+                // поэтому viewModel.setFilter не будет вызван без необходимости.
+                return@setOnCheckedStateChangeListener // Выходим, чтобы избежать дальнейшей обработки в этом проходе
+            }
+
+            // Если чип выбран (checkedId не null)
             val newFilter = when (checkedId) {
                 R.id.chipActive -> AuctionFilterType.ACTIVE
                 R.id.chipScheduled -> AuctionFilterType.SCHEDULED
                 R.id.chipAll -> AuctionFilterType.ALL
-                View.NO_ID -> {
-                    // Если каким-то образом все чипы были сняты, принудительно выбираем "Активные"
-                    // и используем этот фильтр.
-                    Log.w("HomeFragment", "Все чипы сняты, принудительно выбираем 'Активные'")
-                    binding.chipGroupFilter.check(R.id.chipActive) // Принудительно выбрать "Активные"
-                    AuctionFilterType.ACTIVE // Установить фильтр на "Активные"
-                }
-                else -> viewModel.getCurrentFilter() // Не должно произойти
+                // Эта ветка не должна выполниться, если checkedId валиден
+                else -> activeFilterBeforeUserAction
             }
 
-            // Вызываем setFilter, только если фильтр действительно изменился,
-            // или если был активен поисковый запрос (чтобы сбросить его).
-            // viewModel.setFilter сама проверит, нужно ли делать loadItems.
-            if (viewModel.getCurrentFilter() != newFilter || !viewModel.getCurrentSearchTerm().isNullOrEmpty() || checkedId == View.NO_ID) {
-                // Если был активен поиск, очищаем поле поиска в UI
+            // Вызываем viewModel.setFilter, только если фильтр действительно изменился
+            // по сравнению с тем, что было в ViewModel, или если был активен поиск (для его сброса).
+            if (activeFilterBeforeUserAction != newFilter || !viewModel.getCurrentSearchTerm().isNullOrEmpty()) {
                 if (searchView != null && !viewModel.getCurrentSearchTerm().isNullOrEmpty()) {
                     searchView?.setQuery("", false)
                     searchView?.isIconified = true
                 }
-                viewModel.setFilter(newFilter) // ViewModel сама сбросит currentSearchTerm
+                viewModel.setFilter(newFilter) // ViewModel сама обработает, нужно ли загружать данные
             }
         }
     }
+
 
     private fun setupFab() {
         binding.fabAddAuction.setOnClickListener {
