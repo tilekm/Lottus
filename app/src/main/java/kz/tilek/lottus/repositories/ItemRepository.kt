@@ -11,7 +11,7 @@ class ItemRepository {
     private val apiService = ApiClient.instance
 
     /**
-     * Получает страницу с аукционами.
+     * Получает страницу с аукционами для главной страницы.
      * @param page Номер страницы (0-indexed).
      * @param size Количество элементов на странице.
      * @param viewType Тип фильтра ("ALL", "ACTIVE", "SCHEDULED").
@@ -22,16 +22,45 @@ class ItemRepository {
         page: Int,
         size: Int,
         viewType: String,
-        searchTerm: String?, // <-- НОВЫЙ ПАРАМЕТР
+        searchTerm: String?,
         sort: String? = "createdAt,desc"
     ): Result<PageResponse<AuctionItem>> {
         return try {
-            val response = apiService.getItems(page, size, viewType, searchTerm, sort) // <-- Передаем searchTerm
+            val response = apiService.getItems(page, size, viewType, searchTerm, sort)
             if (response.isSuccessful) {
                 response.body()?.let { Result.success(it) }
                     ?: Result.failure(Exception("Не получена страница с лотами от сервера."))
             } else {
                 Result.failure(Exception("Ошибка получения страницы лотов: ${parseError(response)}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Получает страницу с аукционами текущего пользователя для страницы "Мои аукционы".
+     * @param page Номер страницы (0-indexed).
+     * @param size Количество элементов на странице.
+     * @param filterType Тип фильтра ("PARTICIPATING", "WON", "CREATED").
+     * @param searchTerm Поисковый запрос (может быть null или пустым).
+     * @param sort Параметр сортировки (например, "createdAt,desc").
+     */
+    suspend fun getMyItems(
+        page: Int,
+        size: Int,
+        filterType: String, // Строковое значение Enum MyAuctionFilterType
+        searchTerm: String?,
+        sort: String? = "createdAt,desc" // Можно настроить другую сортировку по умолчанию
+    ): Result<PageResponse<AuctionItem>> {
+        return try {
+            // Вызываем новый метод из ApiService
+            val response = apiService.getMyItems(page, size, filterType, searchTerm, sort)
+            if (response.isSuccessful) {
+                response.body()?.let { Result.success(it) }
+                    ?: Result.failure(Exception("Не получена страница 'Мои аукционы' от сервера."))
+            } else {
+                Result.failure(Exception("Ошибка получения страницы 'Мои аукционы': ${parseError(response)}"))
             }
         } catch (e: Exception) {
             Result.failure(e)

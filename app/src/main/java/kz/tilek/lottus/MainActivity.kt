@@ -1,6 +1,7 @@
 package kz.tilek.lottus
 
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
@@ -17,21 +18,32 @@ class MainActivity : AppCompatActivity() {
             .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         val navController = navHostFragment.navController
 
-        findViewById<BottomNavigationView>(R.id.bottom_navigation)
-            .setupWithNavController(navController)
+        val bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottom_navigation)
+        bottomNavigationView.setupWithNavController(navController)
+
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            when (destination.id) {
+                R.id.itemDetailFragment,
+                R.id.userProfileFragment,
+                R.id.createAuctionFragment,
+                R.id.userSettingsFragment -> {
+                    bottomNavigationView.visibility = View.GONE
+                }
+                else -> {
+                    bottomNavigationView.visibility = View.VISIBLE
+                }
+            }
+        }
+
         if (TokenManager.isUserLoggedIn) {
             WebSocketManager.connect()
         }
     }
+
     override fun onDestroy() {
         super.onDestroy()
-        // Проверяем, не был ли выход выполнен через logout (isManuallyDisconnected)
-        // Если просто закрыли приложение, то отключаемся.
-        // Это необязательно, если логика переподключения устраивает,
-        // но может быть полезно для явного управления.
-         if (WebSocketManager.connectionState.value != WebSocketManager.ConnectionState.DISCONNECTED) {
-             WebSocketManager.disconnect() // Можно раскомментировать, если нужно принудительно отключаться при закрытии MainActivity
-         }
+        if (WebSocketManager.connectionState.value != WebSocketManager.ConnectionState.DISCONNECTED) {
+            // WebSocketManager.disconnect() // Раскомментируй, если нужно принудительно отключаться
+        }
     }
-
 }

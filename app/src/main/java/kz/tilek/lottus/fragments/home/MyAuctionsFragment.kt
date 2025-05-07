@@ -1,31 +1,280 @@
+// ./app/src/main/java/kz/tilek/lottus/fragments/home/MyAuctionsFragment.kt
 package kz.tilek.lottus.fragments.home
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.appcompat.widget.SearchView
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Observer
+import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.ConcatAdapter
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import kz.tilek.lottus.R
+import kz.tilek.lottus.adapters.AuctionAdapter
+import kz.tilek.lottus.adapters.LoadingStateAdapter
 import kz.tilek.lottus.databinding.FragmentMyAuctionsBinding
+import kz.tilek.lottus.viewmodels.MyAuctionFilterType
+import kz.tilek.lottus.viewmodels.MyAuctionsViewModel
 
 class MyAuctionsFragment : Fragment() {
 
     private var _binding: FragmentMyAuctionsBinding? = null
     private val binding get() = _binding!!
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+    private val viewModel: MyAuctionsViewModel by viewModels()
+    private lateinit var auctionAdapter: AuctionAdapter
+    private lateinit var loadingStateAdapter: LoadingStateAdapter
+    private lateinit var concatAdapter: ConcatAdapter
+    private var searchView: SearchView? = null
+
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
         _binding = FragmentMyAuctionsBinding.inflate(inflater, container, false)
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        binding.btnMakeBid.setOnClickListener {
-            Toast.makeText(requireContext(), "Ставка сделана!", Toast.LENGTH_SHORT).show()
+        super.onViewCreated(view, savedInstanceState)
+
+        setupToolbarAndSearchView()
+        setupRecyclerView()
+        setupChipGroup()
+        setupSwipeRefresh()
+        observeViewModel()
+
+        // Начальная загрузка данных (ViewModel сама загрузит в init)
+        // Восстанавливаем состояние чипов и поиска из ViewModel
+        viewModel.currentFilterType.value?.let { updateChipSelection(it) }
+        viewModel.currentSearchTerm.value?.let {
+            if (it.isNotEmpty()) {
+                searchView?.setQuery(it, false) // false, чтобы не вызывать onQueryTextSubmit
+                searchView?.isIconified = false
+            }
+        }
+    }
+
+    private fun setupToolbarAndSearchView() {
+        // Toolbar уже имеет title из XML. Если нужно менять динамически:
+        // binding.toolbarMyAuctions.title = "Мои аукционы"
+
+        searchView = binding.searchViewMyAuctions
+        searchView?.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                viewModel.performSearchNow(query)
+                searchView?.clearFocus() // Скрываем клавиатуру
+                return true
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                viewModel.setSearchTerm(newText) // ViewModel обработает debounce
+                return true
+            }
+        })
+
+        searchView?.setOnCloseListener {
+            viewModel.performSearchNow(null) // Очищаем поиск и перезагружаем
+            false // false, чтобы SearchView сама обработала закрытие (схлопывание)
+        }
+    }
+
+    private fun setupRecyclerView() {
+        auctionAdapter = AuctionAdapter { clickedItem ->
+            // Переход на детальный экран такой же, как из HomeFragment
+            val action = MyAuctionsFragmentDirections.actionMyAuctionsFragmentToItemDetailFragment(clickedItem.id)
+            findNavController().navigate(action)
+        }
+        loadingStateAdapter = LoadingStateAdapter()
+        concatAdapter = ConcatAdapter(auctionAdapter, loadingStateAdapter)
+
+        val layoutManager = LinearLayoutManager(requireContext())
+        binding.recyclerViewMyAuctions.layoutManager = layoutManager
+        binding.recyclerViewMyAuctions.adapter = concatAdapter
+
+        binding.recyclerViewMyAuctions.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                val visibleItemCount = layoutManager.childCount
+                val totalItemCount = layoutManager.itemCount
+                val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
+
+                val isLoading = viewModel.isLoadingMore.value ?: false
+                val isNotLoadingState = viewModel.loadState.value !is MyAuctionsViewModel.LoadState.Loading
+
+                if (!isLoading && isNotLoadingState) {
+                    if ((visibleItemCount + firstVisibleItemPosition) >= totalItemCount - 5
+                        && firstVisibleItemPosition >= 0
+                        && totalItemCount > 0
+                        && auctionAdapter.itemCount == totalItemCount - (if (loadingStateAdapter.itemCount > 0) 1 else 0)
+                    ) {
+                        viewModel.loadMyAuctions(isRefresh = false)
+                    }
+                }
+            }
+        })
+    }
+
+    private fun setupChipGroup() {
+        binding.chipGroupFilterMyAuctions.setOnCheckedStateChangeListener { group, checkedIds ->
+            val checkedId = if (checkedIds.isNotEmpty()) checkedIds[0] else View.NO_ID
+
+            val newFilter = when (checkedId) {
+                R.id.chipParticipating -> MyAuctionFilterType.PARTICIPATING
+                R.id.chipWon -> MyAuctionFilterType.WON
+                R.id.chipCreated -> MyAuctionFilterType.CREATED
+                View.NO_ID -> {
+                    // Если все чипы сняты, принудительно выбираем "Участвую"
+                    binding.chipGroupFilterMyAuctions.check(R.id.chipParticipating)
+                    MyAuctionFilterType.PARTICIPATING
+                }
+                else -> viewModel.getCurrentFilterValue() // Не должно произойти
+            }
+
+            // Вызываем setFilter, ViewModel сама проверит, нужно ли делать loadMyAuctions
+            if (viewModel.getCurrentFilterValue() != newFilter || !viewModel.getCurrentSearchTermValue().isNullOrEmpty() || checkedId == View.NO_ID) {
+                if (searchView != null && !viewModel.getCurrentSearchTermValue().isNullOrEmpty()) {
+                    searchView?.setQuery("", false)
+                    searchView?.isIconified = true
+                }
+                viewModel.setFilter(newFilter)
+            }
+        }
+    }
+
+    private fun updateChipSelection(filterType: MyAuctionFilterType) {
+        val chipId = when (filterType) {
+            MyAuctionFilterType.PARTICIPATING -> R.id.chipParticipating
+            MyAuctionFilterType.WON -> R.id.chipWon
+            MyAuctionFilterType.CREATED -> R.id.chipCreated
+        }
+        if (binding.chipGroupFilterMyAuctions.checkedChipId != chipId) {
+            binding.chipGroupFilterMyAuctions.check(chipId)
+        }
+    }
+
+    private fun setupSwipeRefresh() {
+        binding.swipeRefreshLayoutMyAuctions.setOnRefreshListener {
+            viewModel.loadMyAuctions(isRefresh = true)
+        }
+    }
+
+    private fun observeViewModel() {
+        viewModel.myAuctionsList.observe(viewLifecycleOwner, Observer { items ->
+            auctionAdapter.submitList(items.toList()) {
+                val currentLoadState = viewModel.loadState.value
+                val currentSearchTerm = viewModel.getCurrentSearchTermValue()
+                val listIsEmpty = auctionAdapter.itemCount == 0
+
+                binding.recyclerViewMyAuctions.isVisible = !listIsEmpty
+
+                if (listIsEmpty) {
+                    if (currentLoadState !is MyAuctionsViewModel.LoadState.Loading && currentLoadState !is MyAuctionsViewModel.LoadState.Error) {
+                        binding.tvStatusMessageMyAuctions.text = if (currentSearchTerm.isNullOrEmpty()) {
+                            if (currentLoadState is MyAuctionsViewModel.LoadState.Empty) "Аукционов пока нет"
+                            else "Нет аукционов по текущему фильтру"
+                        } else {
+                            "По запросу \"$currentSearchTerm\" ничего не найдено"
+                        }
+                        binding.tvStatusMessageMyAuctions.isVisible = true
+                    } else {
+                        binding.tvStatusMessageMyAuctions.isVisible = false
+                    }
+                } else {
+                    binding.tvStatusMessageMyAuctions.isVisible = false
+                }
+            }
+        })
+
+        viewModel.loadState.observe(viewLifecycleOwner, Observer { state ->
+            binding.swipeRefreshLayoutMyAuctions.isRefreshing = false
+            val currentSearchTerm = viewModel.getCurrentSearchTermValue()
+
+            binding.progressBarMainMyAuctions.isVisible = state is MyAuctionsViewModel.LoadState.Loading && auctionAdapter.itemCount == 0
+
+            when (state) {
+                is MyAuctionsViewModel.LoadState.Loading -> {
+                    if (auctionAdapter.itemCount == 0) {
+                        binding.recyclerViewMyAuctions.isVisible = false
+                        binding.tvStatusMessageMyAuctions.isVisible = false
+                    }
+                }
+                is MyAuctionsViewModel.LoadState.Success -> {
+                    binding.progressBarMainMyAuctions.isVisible = false
+                }
+                is MyAuctionsViewModel.LoadState.Empty -> {
+                    binding.progressBarMainMyAuctions.isVisible = false
+                    binding.recyclerViewMyAuctions.isVisible = false
+                    binding.tvStatusMessageMyAuctions.text = if (currentSearchTerm.isNullOrEmpty()) {
+                        "Аукционов пока нет"
+                    } else {
+                        "По запросу \"$currentSearchTerm\" ничего не найдено"
+                    }
+                    binding.tvStatusMessageMyAuctions.isVisible = true
+                }
+                is MyAuctionsViewModel.LoadState.Error -> {
+                    binding.progressBarMainMyAuctions.isVisible = false
+                    val errorText = "Ошибка: ${state.message}"
+                    if (auctionAdapter.itemCount == 0) {
+                        binding.recyclerViewMyAuctions.isVisible = false
+                        binding.tvStatusMessageMyAuctions.text = errorText
+                        binding.tvStatusMessageMyAuctions.isVisible = true
+                    } else {
+                        binding.recyclerViewMyAuctions.isVisible = true
+                        binding.tvStatusMessageMyAuctions.isVisible = false
+                    }
+                    Toast.makeText(requireContext(), errorText, Toast.LENGTH_LONG).show()
+                }
+                is MyAuctionsViewModel.LoadState.Idle -> {
+                    binding.progressBarMainMyAuctions.isVisible = false
+                    if (auctionAdapter.itemCount == 0) {
+                        binding.recyclerViewMyAuctions.isVisible = false
+                        binding.tvStatusMessageMyAuctions.text = if (currentSearchTerm.isNullOrEmpty()) {
+                            "Нет аукционов"
+                        } else {
+                            "По запросу \"$currentSearchTerm\" ничего не найдено"
+                        }
+                        binding.tvStatusMessageMyAuctions.isVisible = true
+                    } else {
+                        binding.recyclerViewMyAuctions.isVisible = true
+                        binding.tvStatusMessageMyAuctions.isVisible = false
+                    }
+                }
+            }
+        })
+
+        viewModel.isLoadingMore.observe(viewLifecycleOwner, Observer { isLoadingMore ->
+            loadingStateAdapter.setLoading(isLoadingMore)
+        })
+
+        // Наблюдение за изменениями фильтра и поиска из ViewModel для обновления UI
+        viewModel.currentFilterType.observe(viewLifecycleOwner) { filter ->
+            updateChipSelection(filter)
+        }
+
+        viewModel.currentSearchTerm.observe(viewLifecycleOwner) { term ->
+            if (searchView?.query.toString() != term) {
+                searchView?.setQuery(term, false)
+            }
+            if (term.isNullOrEmpty() && searchView?.isIconified == false) {
+                searchView?.isIconified = true
+            }
         }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
+        searchView?.setOnQueryTextListener(null)
+        searchView?.setOnCloseListener(null)
+        searchView = null
+        binding.recyclerViewMyAuctions.adapter = null
         _binding = null
     }
 }

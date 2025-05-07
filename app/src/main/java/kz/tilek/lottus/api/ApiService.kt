@@ -108,10 +108,18 @@ interface ApiService {
         @Query("page") page: Int,
         @Query("size") size: Int,
         @Query("viewType") viewType: String,
-        @Query("searchTerm") searchTerm: String?, // <-- НОВЫЙ ПАРАМЕТР для поиска (nullable)
+        @Query("searchTerm") searchTerm: String?,
         @Query("sort") sort: String? = "createdAt,desc"
     ): Response<PageResponse<AuctionItem>>
-    // ------------------------------------------------------------------------------------
+
+    @GET("api/items/my")
+    suspend fun getMyItems(
+        @Query("page") page: Int,
+        @Query("size") size: Int,
+        @Query("filterType") filterType: String, // PARTICIPATING, WON, CREATED
+        @Query("searchTerm") searchTerm: String?,
+        @Query("sort") sort: String? = "createdAt,desc"
+    ): Response<PageResponse<AuctionItem>>
 
     @POST("api/items/{itemId}/buy-now")
     suspend fun buyNowForItem(@Path("itemId") itemId: String): Response<Bid>

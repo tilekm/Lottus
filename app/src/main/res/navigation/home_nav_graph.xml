@@ -28,7 +28,16 @@
         <fragment android:id="@+id/myAuctionsFragment"
             android:name="kz.tilek.lottus.fragments.home.MyAuctionsFragment"
             android:label="Мои аукционы"
-            tools:layout="@layout/fragment_my_auctions"/>
+            tools:layout="@layout/fragment_my_auctions">
+                <!-- Добавляем action для перехода к деталям лота -->
+                <action
+                    android:id="@+id/action_myAuctionsFragment_to_itemDetailFragment"
+                    app:destination="@id/itemDetailFragment"
+                    app:enterAnim="@anim/slide_in_right"
+                    app:exitAnim="@anim/slide_out_left"
+                    app:popEnterAnim="@anim/slide_in_left"
+                    app:popExitAnim="@anim/slide_out_right" />
+        </fragment>
 
         <fragment android:id="@+id/profileFragment"
             android:name="kz.tilek.lottus.fragments.home.ProfileFragment"
