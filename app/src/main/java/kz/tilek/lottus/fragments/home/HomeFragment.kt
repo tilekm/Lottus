@@ -1,7 +1,4 @@
-// ./app/src/main/java/kz/tilek/lottus/fragments/home/HomeFragment.kt
-// ИЗМЕНЕННЫЙ ФАЙЛ (фрагмент observeViewModel)
 package kz.tilek.lottus.fragments.home
-
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -23,18 +20,14 @@ import kz.tilek.lottus.adapters.LoadingStateAdapter
 import kz.tilek.lottus.databinding.FragmentHomeBinding
 import kz.tilek.lottus.viewmodels.AuctionFilterType
 import kz.tilek.lottus.viewmodels.HomeViewModel
-
 class HomeFragment : Fragment() {
-
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
-
     private val viewModel: HomeViewModel by viewModels()
     private lateinit var auctionAdapter: AuctionAdapter
     private lateinit var loadingStateAdapter: LoadingStateAdapter
     private lateinit var concatAdapter: ConcatAdapter
     private var searchView: SearchView? = null
-
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -42,33 +35,21 @@ class HomeFragment : Fragment() {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         return binding.root
     }
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         setupSearchView()
         setupRecyclerView()
         setupChipGroup()
         setupFab()
         setupSwipeRefresh()
         observeViewModel()
-
-        // Начальная проверка состояния чипов и загрузка, если необходимо
         val initialFilter = viewModel.getCurrentFilter()
         when (initialFilter) {
             AuctionFilterType.ACTIVE -> binding.chipGroupFilter.check(R.id.chipActive)
             AuctionFilterType.SCHEDULED -> binding.chipGroupFilter.check(R.id.chipScheduled)
             AuctionFilterType.ALL -> binding.chipGroupFilter.check(R.id.chipAll)
         }
-        // ViewModel сама загрузит данные в init. Дополнительный вызов loadItems здесь обычно не нужен,
-        // если только нет специфичной логики для восстановления состояния.
-        // Если список пуст и состояние Idle, ViewModel уже должна была попытаться загрузить.
-        // Можно добавить проверку, если ViewModel.itemsList.value.isNullOrEmpty() && viewModel.loadState.value == HomeViewModel.LoadState.Idle
-        // то viewModel.loadItems(isRefresh = true)
-        // Но это может привести к двойной загрузке, если init еще не отработал.
-        // Лучше положиться на init ViewModel.
     }
-
     private fun setupSearchView() {
         searchView = binding.toolbarHome.findViewById(R.id.searchViewHome)
         searchView?.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
@@ -77,29 +58,23 @@ class HomeFragment : Fragment() {
                 searchView?.clearFocus()
                 return true
             }
-
             override fun onQueryTextChange(newText: String?): Boolean {
                 viewModel.setSearchTerm(newText)
                 return true
             }
         })
-
         val currentSearchQuery = viewModel.getCurrentSearchTerm()
         if (!currentSearchQuery.isNullOrEmpty()) {
             searchView?.setQuery(currentSearchQuery, false)
             searchView?.isIconified = false
-            // searchView?.clearFocus() // Не всегда нужно убирать фокус при восстановлении
         } else {
             searchView?.isIconified = true
         }
-
         searchView?.setOnCloseListener {
-            viewModel.performSearchNow(null) // Используем performSearchNow для немедленной перезагрузки
+            viewModel.performSearchNow(null) 
             false
         }
     }
-
-
     private fun setupRecyclerView() {
         auctionAdapter = AuctionAdapter { clickedItem ->
             val action = HomeFragmentDirections.actionHomeFragmentToItemDetailFragment(clickedItem.id)
@@ -107,29 +82,22 @@ class HomeFragment : Fragment() {
         }
         loadingStateAdapter = LoadingStateAdapter()
         concatAdapter = ConcatAdapter(auctionAdapter, loadingStateAdapter)
-
         val layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerView.layoutManager = layoutManager
         binding.recyclerView.adapter = concatAdapter
-        // Убираем отступ снизу из RecyclerView, если FAB перекрывает контент,
-        // лучше добавить padding к ConstraintLayout или SwipeRefreshLayout, если нужно.
-        // binding.recyclerView.setPadding(0,0,0,0) // Пример, если нужно убрать все отступы
-
         binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)
                 val visibleItemCount = layoutManager.childCount
                 val totalItemCount = layoutManager.itemCount
                 val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
-
                 val isLoading = viewModel.isLoadingMore.value ?: false
                 val isNotLoadingState = viewModel.loadState.value !is HomeViewModel.LoadState.Loading
-
                 if (!isLoading && isNotLoadingState) {
-                    if ((visibleItemCount + firstVisibleItemPosition) >= totalItemCount - 5 // Увеличил порог для более ранней загрузки
+                    if ((visibleItemCount + firstVisibleItemPosition) >= totalItemCount - 5 
                         && firstVisibleItemPosition >= 0
-                        && totalItemCount > 0 // Убедимся, что список не пуст
-                        && auctionAdapter.itemCount == totalItemCount - (if (loadingStateAdapter.itemCount > 0) 1 else 0) // Проверяем, что totalItemCount соответствует элементам + футер
+                        && totalItemCount > 0 
+                        && auctionAdapter.itemCount == totalItemCount - (if (loadingStateAdapter.itemCount > 0) 1 else 0) 
                     ) {
                         viewModel.loadItems(isRefresh = false)
                     }
@@ -137,92 +105,63 @@ class HomeFragment : Fragment() {
             }
         })
     }
-
     private fun setupChipGroup() {
         val currentVmFilterInitial = viewModel.getCurrentFilter()
         val initialChipId = when (currentVmFilterInitial) {
             AuctionFilterType.ACTIVE -> R.id.chipActive
             AuctionFilterType.SCHEDULED -> R.id.chipScheduled
             AuctionFilterType.ALL -> R.id.chipAll
-            else -> R.id.chipActive // По умолчанию, если что-то пошло не так
+            else -> R.id.chipActive 
         }
-        // Проверяем, отличается ли текущий выбранный чип от того, что должен быть выбран
-        // Это предотвратит лишний вызов listener'а при инициализации, если чип уже выбран правильно
         if (binding.chipGroupFilter.checkedChipId != initialChipId) {
             binding.chipGroupFilter.check(initialChipId)
         }
-
         binding.chipGroupFilter.setOnCheckedStateChangeListener { group, checkedIds ->
-            // Получаем фильтр, который был активен в ViewModel ДО этого действия пользователя
             val activeFilterBeforeUserAction = viewModel.getCurrentFilter()
-            val checkedId = checkedIds.firstOrNull() // Безопасное получение ID выбранного чипа
-
-            if (checkedId == null) { // Пользователь попытался отменить выбор единственного активного чипа
-                // Повторно выбираем чип, который соответствовал фильтру ДО попытки отмены
+            val checkedId = checkedIds.firstOrNull() 
+            if (checkedId == null) { 
                 val chipIdToReselect = when (activeFilterBeforeUserAction) {
                     AuctionFilterType.ACTIVE -> R.id.chipActive
                     AuctionFilterType.SCHEDULED -> R.id.chipScheduled
                     AuctionFilterType.ALL -> R.id.chipAll
-                    else -> R.id.chipActive // Запасной вариант
+                    else -> R.id.chipActive 
                 }
-                group.check(chipIdToReselect) // Это действие снова вызовет listener
-                // В следующем вызове listener'a checkedId уже не будет null,
-                // и newFilter будет равен activeFilterBeforeUserAction,
-                // поэтому viewModel.setFilter не будет вызван без необходимости.
-                return@setOnCheckedStateChangeListener // Выходим, чтобы избежать дальнейшей обработки в этом проходе
+                group.check(chipIdToReselect) 
+                return@setOnCheckedStateChangeListener 
             }
-
-            // Если чип выбран (checkedId не null)
             val newFilter = when (checkedId) {
                 R.id.chipActive -> AuctionFilterType.ACTIVE
                 R.id.chipScheduled -> AuctionFilterType.SCHEDULED
                 R.id.chipAll -> AuctionFilterType.ALL
-                // Эта ветка не должна выполниться, если checkedId валиден
                 else -> activeFilterBeforeUserAction
             }
-
-            // Вызываем viewModel.setFilter, только если фильтр действительно изменился
-            // по сравнению с тем, что было в ViewModel, или если был активен поиск (для его сброса).
             if (activeFilterBeforeUserAction != newFilter || !viewModel.getCurrentSearchTerm().isNullOrEmpty()) {
                 if (searchView != null && !viewModel.getCurrentSearchTerm().isNullOrEmpty()) {
                     searchView?.setQuery("", false)
                     searchView?.isIconified = true
                 }
-                viewModel.setFilter(newFilter) // ViewModel сама обработает, нужно ли загружать данные
+                viewModel.setFilter(newFilter) 
             }
         }
     }
-
-
     private fun setupFab() {
         binding.fabAddAuction.setOnClickListener {
             findNavController().navigate(R.id.createAuctionFragment)
         }
     }
-
     private fun setupSwipeRefresh() {
         binding.swipeRefreshLayout.setOnRefreshListener {
             viewModel.loadItems(isRefresh = true)
         }
     }
-
     private fun observeViewModel() {
         viewModel.itemsList.observe(viewLifecycleOwner, Observer { items ->
-            // Передаем копию списка в адаптер, чтобы избежать проблем с модификацией
             auctionAdapter.submitList(items.toList()) {
-                // Этот блок выполнится ПОСЛЕ того, как DiffUtil отработает
-                // и RecyclerView обновится. Здесь auctionAdapter.itemCount будет актуальным.
-
                 val currentLoadState = viewModel.loadState.value
                 val currentSearchTerm = viewModel.getCurrentSearchTerm()
                 val listIsEmpty = auctionAdapter.itemCount == 0
-
                 binding.recyclerView.isVisible = !listIsEmpty
-
                 if (listIsEmpty) {
-                    // Список пуст, показываем сообщение
-                    // Не показываем сообщение "нет данных", если идет загрузка или произошла ошибка
-                    // (эти состояния обрабатываются в loadState.observe)
                     if (currentLoadState !is HomeViewModel.LoadState.Loading && currentLoadState !is HomeViewModel.LoadState.Error) {
                         binding.tvStatusMessage.text = if (currentSearchTerm.isNullOrEmpty()) {
                             if (currentLoadState is HomeViewModel.LoadState.Empty) "Аукционов пока нет"
@@ -232,44 +171,30 @@ class HomeFragment : Fragment() {
                         }
                         binding.tvStatusMessage.isVisible = true
                     } else {
-                        binding.tvStatusMessage.isVisible = false // Скрываем, если загрузка/ошибка
+                        binding.tvStatusMessage.isVisible = false 
                     }
                 } else {
-                    // Список не пуст
                     binding.tvStatusMessage.isVisible = false
                 }
             }
         })
-
         viewModel.loadState.observe(viewLifecycleOwner, Observer { state ->
-            binding.swipeRefreshLayout.isRefreshing = false // Всегда останавливаем SwipeRefresh
+            binding.swipeRefreshLayout.isRefreshing = false 
             val currentSearchTerm = viewModel.getCurrentSearchTerm()
-
-            // Главный ProgressBar: виден только при начальной загрузке (когда список еще пуст)
             binding.progressBarMain.isVisible = state is HomeViewModel.LoadState.Loading && auctionAdapter.itemCount == 0
-
-            // Скрываем RecyclerView и tvStatusMessage по умолчанию, itemsList.observe уточнит их видимость
-            // binding.recyclerView.isVisible = false // Управляется из itemsList.observe
-            // binding.tvStatusMessage.isVisible = false // Управляется из itemsList.observe
-
             when (state) {
                 is HomeViewModel.LoadState.Loading -> {
-                    // Если идет загрузка и список пуст, progressBarMain уже должен быть видим.
-                    // tvStatusMessage должен быть скрыт. recyclerView тоже.
                     if (auctionAdapter.itemCount == 0) {
                         binding.recyclerView.isVisible = false
                         binding.tvStatusMessage.isVisible = false
                     }
-                    // Если список не пуст, progressBarMain не будет виден, старые данные отображаются.
                 }
                 is HomeViewModel.LoadState.Success -> {
-                    // progressBarMain должен быть скрыт.
-                    // Видимость recyclerView и tvStatusMessage определяется в itemsList.observe.
                     binding.progressBarMain.isVisible = false
                 }
                 is HomeViewModel.LoadState.Empty -> {
                     binding.progressBarMain.isVisible = false
-                    binding.recyclerView.isVisible = false // Список точно пуст
+                    binding.recyclerView.isVisible = false 
                     binding.tvStatusMessage.text = if (currentSearchTerm.isNullOrEmpty()) {
                         "Аукционов пока нет"
                     } else {
@@ -280,12 +205,11 @@ class HomeFragment : Fragment() {
                 is HomeViewModel.LoadState.Error -> {
                     binding.progressBarMain.isVisible = false
                     val errorText = "Ошибка: ${state.message}"
-                    if (auctionAdapter.itemCount == 0) { // Если нет старых данных для отображения
+                    if (auctionAdapter.itemCount == 0) { 
                         binding.recyclerView.isVisible = false
                         binding.tvStatusMessage.text = errorText
                         binding.tvStatusMessage.isVisible = true
                     } else {
-                        // Показываем старые данные, если есть, ошибку показываем через Toast
                         binding.recyclerView.isVisible = true
                         binding.tvStatusMessage.isVisible = false
                     }
@@ -293,8 +217,6 @@ class HomeFragment : Fragment() {
                 }
                 is HomeViewModel.LoadState.Idle -> {
                     binding.progressBarMain.isVisible = false
-                    // Начальное состояние или после отмены загрузки.
-                    // Видимость recyclerView и tvStatusMessage определяется в itemsList.observe.
                     if (auctionAdapter.itemCount == 0) {
                         binding.recyclerView.isVisible = false
                         binding.tvStatusMessage.text = if (currentSearchTerm.isNullOrEmpty()) {
@@ -310,18 +232,16 @@ class HomeFragment : Fragment() {
                 }
             }
         })
-
         viewModel.isLoadingMore.observe(viewLifecycleOwner, Observer { isLoadingMore ->
             loadingStateAdapter.setLoading(isLoadingMore)
         })
     }
-
     override fun onDestroyView() {
         super.onDestroyView()
         searchView?.setOnQueryTextListener(null)
         searchView?.setOnCloseListener(null)
         searchView = null
-        binding.recyclerView.adapter = null // Важно для предотвращения утечек ConcatAdapter
+        binding.recyclerView.adapter = null 
         _binding = null
     }
 }

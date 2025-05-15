@@ -1,6 +1,4 @@
-// ./app/src/main/java/kz/tilek/lottus/websocket/WebSocketManager.kt
 package kz.tilek.lottus.websocket
-
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
@@ -13,7 +11,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
-import kotlinx.coroutines.* // Импорт корутин
+import kotlinx.coroutines.* 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kz.tilek.lottus.App
@@ -26,93 +24,61 @@ import ua.naiksoftware.stomp.Stomp
 import ua.naiksoftware.stomp.StompClient
 import ua.naiksoftware.stomp.dto.LifecycleEvent
 import ua.naiksoftware.stomp.dto.StompHeader
-import java.util.concurrent.TimeUnit // Для задержки
-
+import java.util.concurrent.TimeUnit 
 object WebSocketManager {
-
     private const val TAG = "WebSocketManager"
     private const val NOTIFICATION_CHANNEL_ID = "lottus_notifications"
     private var mStompClient: StompClient? = null
     private val compositeDisposable = CompositeDisposable()
     private val activeSubscriptions = mutableMapOf<String, Disposable>()
     private val gson = Gson()
-
-    // --- Новые переменные для переподключения ---
-    private val managerScope = CoroutineScope(Dispatchers.IO + SupervisorJob()) // Корутин скоуп для менеджера
-    private var reconnectJob: Job? = null // Job для отслеживания попыток переподключения
-    private var isManuallyDisconnected = false // Флаг, что отключение было выполнено вручную (logout)
-    private const val INITIAL_RECONNECT_DELAY_MS = 5000L // Начальная задержка 5 секунд
-    private const val MAX_RECONNECT_DELAY_MS = 60000L // Максимальная задержка 1 минута
+    private val managerScope = CoroutineScope(Dispatchers.IO + SupervisorJob()) 
+    private var reconnectJob: Job? = null 
+    private var isManuallyDisconnected = false 
+    private const val INITIAL_RECONNECT_DELAY_MS = 5000L 
+    private const val MAX_RECONNECT_DELAY_MS = 60000L 
     private var currentReconnectDelay = INITIAL_RECONNECT_DELAY_MS
-    // -------------------------------------------
-
     private val _connectionState = MutableStateFlow<ConnectionState>(ConnectionState.DISCONNECTED)
     val connectionState: StateFlow<ConnectionState> = _connectionState
-
     val bidMessagesFlow = MutableStateFlow<BidMessage?>(null)
     val notificationMessagesFlow = MutableStateFlow<Notification?>(null)
-
     enum class ConnectionState { CONNECTING, CONNECTED, DISCONNECTED, ERROR }
-
     fun connect() {
-        // Если уже подключаемся или подключены, выходим
         if (_connectionState.value == ConnectionState.CONNECTING || _connectionState.value == ConnectionState.CONNECTED) {
             Log.d(TAG, "Уже подключаемся или подключен.")
             return
         }
-
-        // Отменяем предыдущие попытки переподключения, если они были
         reconnectJob?.cancel()
         reconnectJob = null
-        isManuallyDisconnected = false // Сбрасываем флаг ручного отключения
-        currentReconnectDelay = INITIAL_RECONNECT_DELAY_MS // Сбрасываем задержку
-
+        isManuallyDisconnected = false 
+        currentReconnectDelay = INITIAL_RECONNECT_DELAY_MS 
         val token = TokenManager.token
         if (token == null) {
             Log.e(TAG, "Невозможно подключиться: JWT токен отсутствует.")
             _connectionState.value = ConnectionState.ERROR
-            // Не пытаемся переподключиться, если нет токена
             return
         }
-
         val headers = listOf(StompHeader("Authorization", "Bearer $token"))
-
-        // --- Добавляем Heartbeat ---
         val currentClient: StompClient
-//        if (Build.MODEL == "sdk_gphone64_x86_64") {
-//            currentClient = Stomp.over(Stomp.ConnectionProvider.OKHTTP, "ws://10.0.2.2:8080/ws/websocket")
-//                .withServerHeartbeat(30000)
-//                .withClientHeartbeat(30000)
-//        } else {
             currentClient = Stomp.over(Stomp.ConnectionProvider.OKHTTP, ApiClient.WEBSOCKET_URL)
                 .withServerHeartbeat(30000)
                 .withClientHeartbeat(30000)
-//        }
-
         mStompClient = currentClient
-            // Отправляем heartbeat каждые 30 секунд, ожидаем от сервера каждые 30 секунд
-            // Сервер тоже должен быть настроен на похожие значения!
-
-        // -------------------------
-
-        compositeDisposable.clear() // Очищаем предыдущие подписки перед новым подключением
-
+        compositeDisposable.clear() 
         val lifecycleDisposable = mStompClient?.lifecycle()
             ?.subscribeOn(Schedulers.io())
             ?.observeOn(AndroidSchedulers.mainThread())
             ?.subscribe({ lifecycleEvent ->
                 if (currentClient != mStompClient && lifecycleEvent.type != LifecycleEvent.Type.CLOSED && lifecycleEvent.type != LifecycleEvent.Type.ERROR) {
                     Log.w(TAG, "Получено событие lifecycle от устаревшего клиента. Игнорируем.")
-                    return@subscribe // Игнорируем событие от старого клиента (кроме закрытия/ошибки)
+                    return@subscribe 
                 }
                 when (lifecycleEvent.type) {
                     LifecycleEvent.Type.OPENED -> {
                         Log.d(TAG, "Соединение установлено!")
                         _connectionState.value = ConnectionState.CONNECTED
-                        currentReconnectDelay = INITIAL_RECONNECT_DELAY_MS // Сброс задержки при успехе
-                        subscribeToUserNotifications() // Подписываемся на уведомления
-                        // Повторно подписываемся на топики, которые были активны (если нужно сохранять их список)
-                        // resubscribeToActiveTopics() // (Реализация этой функции зависит от логики приложения)
+                        currentReconnectDelay = INITIAL_RECONNECT_DELAY_MS 
+                        subscribeToUserNotifications() 
                     }
                     LifecycleEvent.Type.CLOSED -> {
                         Log.d(TAG, "Соединение закрыто.")
@@ -125,7 +91,6 @@ object WebSocketManager {
                         } else {
                             Log.d(TAG, "Получено CLOSED от старого клиента. Игнорируем.")
                         }
-                        // ----------------------------------------------------------
                     }
                     LifecycleEvent.Type.ERROR -> {
                         Log.e(TAG, "Ошибка соединения: ", lifecycleEvent.exception)
@@ -138,11 +103,9 @@ object WebSocketManager {
                         } else {
                             Log.d(TAG, "Получено ERROR от старого клиента. Игнорируем.")
                         }
-                        // ----------------------------------------------------------
                     }
                     LifecycleEvent.Type.FAILED_SERVER_HEARTBEAT -> {
                         Log.w(TAG, "Пропущен heartbeat сервера.")
-                        // Соединение, скорее всего, разорвано, ожидаем CLOSED или ERROR
                     }
                 }
             }, { throwable ->
@@ -154,48 +117,35 @@ object WebSocketManager {
                         scheduleReconnect()
                     }
                 }
-                // ----------------------------------------------------------
             })
         compositeDisposable.add(lifecycleDisposable!!)
-
         Log.d(TAG, "Попытка подключения к ${ApiClient.WEBSOCKET_URL}...")
         _connectionState.value = ConnectionState.CONNECTING
         mStompClient?.connect(headers)
     }
-
     fun disconnect() {
         Log.d(TAG, "Ручное отключение...")
         isManuallyDisconnected = true
         reconnectJob?.cancel()
         reconnectJob = null
-
-        val clientToDisconnect = mStompClient // Сохраняем ссылку на текущий клиент
-        mStompClient = null // Сразу обнуляем глобальную ссылку
-
-        compositeDisposable.clear() // Отписываемся от всего
-
-        clientToDisconnect?.disconnect() // Отключаем сохраненный клиент
-
+        val clientToDisconnect = mStompClient 
+        mStompClient = null 
+        compositeDisposable.clear() 
+        clientToDisconnect?.disconnect() 
         _connectionState.value = ConnectionState.DISCONNECTED
-        clearSubscriptions() // Очистка активных подписок (на всякий случай)
+        clearSubscriptions() 
         Log.d(TAG, "Ручное отключение завершено.")
     }
-
-    // --- Новая функция для планирования переподключения ---
     private fun scheduleReconnect() {
         if (reconnectJob?.isActive == true) {
-            // Уже запланировано или выполняется
             return
         }
         reconnectJob = managerScope.launch {
             Log.d(TAG, "Планируем переподключение через ${currentReconnectDelay / 1000} сек...")
             delay(currentReconnectDelay)
             currentReconnectDelay = (currentReconnectDelay * 2).coerceAtMost(MAX_RECONNECT_DELAY_MS)
-
-            // Проверяем состояние ПЕРЕД попыткой
             if (_connectionState.value != ConnectionState.CONNECTED && !isManuallyDisconnected) {
                 Log.d(TAG, "Выполняем попытку переподключения...")
-                // --- Добавляем проверку, что другой connect не запущен ---
                 if (_connectionState.value == ConnectionState.CONNECTING) {
                     Log.w(TAG, "Попытка переподключения пропущена, уже идет подключение.")
                 } else {
@@ -208,10 +158,7 @@ object WebSocketManager {
             }
         }
     }
-    // ----------------------------------------------------
-
     fun subscribeToTopic(topicPath: String) {
-        // ... (код подписки остается прежним, но теперь он будет вызван после успешного connect или reconnect)
         if (mStompClient == null || mStompClient?.isConnected != true) {
             Log.w(TAG, "Невозможно подписаться на $topicPath: нет соединения.")
             return
@@ -220,7 +167,6 @@ object WebSocketManager {
             Log.d(TAG, "Уже подписан на $topicPath")
             return
         }
-
         Log.d(TAG, "Подписка на топик: $topicPath")
         val topicDisposable = mStompClient?.topic(topicPath)
             ?.subscribeOn(Schedulers.io())
@@ -237,13 +183,11 @@ object WebSocketManager {
                 Log.e(TAG, "Ошибка подписки на $topicPath: ", throwable)
                 activeSubscriptions.remove(topicPath)
             })
-
         if (topicDisposable != null) {
             compositeDisposable.add(topicDisposable)
             activeSubscriptions[topicPath] = topicDisposable
         }
     }
-
     private fun subscribeToUserNotifications() {
         val userId = TokenManager.userId
         val userQueuePath = "$userId/queue/notifications"
@@ -255,7 +199,6 @@ object WebSocketManager {
             Log.d(TAG, "Уже подписан на $userQueuePath")
             return
         }
-
         Log.d(TAG, "Подписка на очередь уведомлений: $userQueuePath")
         val notificationDisposable = mStompClient?.topic(userQueuePath)
             ?.subscribeOn(Schedulers.io())
@@ -273,16 +216,13 @@ object WebSocketManager {
                 Log.e(TAG, "Ошибка подписки на $userQueuePath: ", throwable)
                 activeSubscriptions.remove(userQueuePath)
             })
-
         if (notificationDisposable != null) {
             compositeDisposable.add(notificationDisposable)
             activeSubscriptions[userQueuePath] = notificationDisposable
         }
     }
-
     private fun showSystemNotification(context: Context, notification: Notification) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 NOTIFICATION_CHANNEL_ID,
@@ -293,30 +233,23 @@ object WebSocketManager {
             }
             notificationManager.createNotificationChannel(channel)
         }
-
         val builder = NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification) // Убедись, что иконка есть
+            .setSmallIcon(R.drawable.ic_notification) 
             .setContentTitle("Lottus Аукцион")
             .setContentText(notification.message)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
-
         notificationManager.notify(notification.id.hashCode(), builder.build())
     }
-
     fun unsubscribeFromTopic(topicPath: String) {
         activeSubscriptions.remove(topicPath)?.let {
             if (!it.isDisposed) {
                 Log.d(TAG, "Отписка от $topicPath")
                 it.dispose()
-                // НЕ удаляем из compositeDisposable здесь, он очищается при disconnect или новом connect
             }
         }
     }
-
     private fun clearSubscriptions() {
-        // Отписываемся от всего, КРОМЕ lifecycle подписки (она в compositeDisposable)
-        // Копируем ключи, чтобы избежать ConcurrentModificationException
         val topicsToUnsubscribe = activeSubscriptions.keys.toList()
         topicsToUnsubscribe.forEach { topic ->
             activeSubscriptions.remove(topic)?.dispose()
@@ -324,11 +257,4 @@ object WebSocketManager {
         activeSubscriptions.clear()
         Log.d(TAG, "Все активные подписки на топики очищены.")
     }
-
-    // Опционально: метод для переподписки на нужные топики после реконнекта
-    // private fun resubscribeToActiveTopics() {
-    //    val currentTopics = activeSubscriptions.keys.toList() // Получаем список топиков, на которые были подписаны
-    //    activeSubscriptions.clear() // Очищаем старые Disposables
-    //    currentTopics.forEach { subscribeToTopic(it) } // Подписываемся заново
-    // }
 }

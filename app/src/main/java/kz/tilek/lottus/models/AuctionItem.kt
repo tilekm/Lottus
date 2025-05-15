@@ -1,8 +1,6 @@
 package kz.tilek.lottus.models
-
 import com.google.gson.annotations.SerializedName
 import java.math.BigDecimal
-
 data class AuctionItem(
     @SerializedName("id") val id: String,
     @SerializedName("seller") val seller: User,

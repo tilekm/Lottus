@@ -1,16 +1,9 @@
-// ./app/src/main/java/kz/tilek/lottus/repositories/NotificationRepository.kt
 package kz.tilek.lottus.repositories
-
 import kz.tilek.lottus.api.ApiClient
 import kz.tilek.lottus.models.Notification
 import kz.tilek.lottus.util.parseError
-
 class NotificationRepository {
     private val apiService = ApiClient.instance
-
-    /**
-     * Получает все уведомления пользователя.
-     */
     suspend fun getAllNotifications(userId: String): Result<List<Notification>> {
         return try {
             val response = apiService.getAllNotifications(userId)
@@ -23,10 +16,6 @@ class NotificationRepository {
             Result.failure(e)
         }
     }
-
-    /**
-     * Получает непрочитанные уведомления пользователя.
-     */
     suspend fun getUnreadNotifications(userId: String): Result<List<Notification>> {
         return try {
             val response = apiService.getUnreadNotifications(userId)
@@ -39,15 +28,11 @@ class NotificationRepository {
             Result.failure(e)
         }
     }
-
-    /**
-     * Помечает уведомление как прочитанное.
-     */
     suspend fun markNotificationAsRead(notificationId: String): Result<Unit> {
         return try {
             val response = apiService.markNotificationAsRead(notificationId)
             if (response.isSuccessful) {
-                Result.success(Unit) // Успех без тела ответа
+                Result.success(Unit) 
             } else {
                 Result.failure(Exception("Ошибка пометки уведомления как прочитанного: ${parseError(response)}"))
             }

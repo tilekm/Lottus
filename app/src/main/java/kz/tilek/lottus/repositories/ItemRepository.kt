@@ -1,23 +1,12 @@
 package kz.tilek.lottus.repositories
-
 import kz.tilek.lottus.api.ApiClient
 import kz.tilek.lottus.api.CreateAuctionRequest
 import kz.tilek.lottus.api.PageResponse
 import kz.tilek.lottus.models.AuctionItem
 import kz.tilek.lottus.models.Bid
 import kz.tilek.lottus.util.parseError
-
 class ItemRepository {
     private val apiService = ApiClient.instance
-
-    /**
-     * Получает страницу с аукционами для главной страницы.
-     * @param page Номер страницы (0-indexed).
-     * @param size Количество элементов на странице.
-     * @param viewType Тип фильтра ("ALL", "ACTIVE", "SCHEDULED").
-     * @param searchTerm Поисковый запрос (может быть null или пустым).
-     * @param sort Параметр сортировки (например, "createdAt,desc").
-     */
     suspend fun getItems(
         page: Int,
         size: Int,
@@ -37,24 +26,14 @@ class ItemRepository {
             Result.failure(e)
         }
     }
-
-    /**
-     * Получает страницу с аукционами текущего пользователя для страницы "Мои аукционы".
-     * @param page Номер страницы (0-indexed).
-     * @param size Количество элементов на странице.
-     * @param filterType Тип фильтра ("PARTICIPATING", "WON", "CREATED").
-     * @param searchTerm Поисковый запрос (может быть null или пустым).
-     * @param sort Параметр сортировки (например, "createdAt,desc").
-     */
     suspend fun getMyItems(
         page: Int,
         size: Int,
-        filterType: String, // Строковое значение Enum MyAuctionFilterType
+        filterType: String, 
         searchTerm: String?,
-        sort: String? = "createdAt,desc" // Можно настроить другую сортировку по умолчанию
+        sort: String? = "createdAt,desc" 
     ): Result<PageResponse<AuctionItem>> {
         return try {
-            // Вызываем новый метод из ApiService
             val response = apiService.getMyItems(page, size, filterType, searchTerm, sort)
             if (response.isSuccessful) {
                 response.body()?.let { Result.success(it) }
@@ -66,7 +45,6 @@ class ItemRepository {
             Result.failure(e)
         }
     }
-
     suspend fun getItemDetails(itemId: String): Result<AuctionItem> {
         return try {
             val response = apiService.getItemDetails(itemId)
@@ -80,7 +58,6 @@ class ItemRepository {
             Result.failure(e)
         }
     }
-
     suspend fun getItemsBySeller(sellerId: String): Result<List<AuctionItem>> {
         return try {
             val response = apiService.getItemsBySeller(sellerId)
@@ -93,7 +70,6 @@ class ItemRepository {
             Result.failure(e)
         }
     }
-
     suspend fun createItem(request: CreateAuctionRequest): Result<AuctionItem> {
         return try {
             val response = apiService.createItem(request)
@@ -107,7 +83,6 @@ class ItemRepository {
             Result.failure(e)
         }
     }
-
     suspend fun buyNowForItem(itemId: String): Result<Bid> {
         return try {
             val response = apiService.buyNowForItem(itemId)
